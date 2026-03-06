@@ -34,6 +34,8 @@ export function SkillNodeComponent({
   allNodes,
 }: SkillNodeProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingExtension, setIsEditingExtension] = useState(false)
+  const extensionInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -207,6 +209,13 @@ export function SkillNodeComponent({
     }
   }, [isEditingTitle])
 
+  useEffect(() => {
+    if (isEditingExtension && extensionInputRef.current) {
+      extensionInputRef.current.focus()
+      extensionInputRef.current.select()
+    }
+  }, [isEditingExtension])
+
   // Sync scroll between textarea, line numbers, and highlight overlay
   const handleTextareaScroll = useCallback(() => {
     if (textareaRef.current && lineNumbersRef.current) {
@@ -314,7 +323,54 @@ export function SkillNodeComponent({
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            {isEditingTitle ? (
+            {node.type === "script" ? (
+              // Script node: both title and extension are editable
+              <div className="no-drag flex items-center">
+                {isEditingTitle ? (
+                  <input
+                    ref={titleInputRef}
+                    className="bg-transparent text-sm font-mono outline-none w-32"
+                    style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
+                    value={node.title}
+                    onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+                    onBlur={() => setIsEditingTitle(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") setIsEditingTitle(false)
+                    }}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-mono transition-colors truncate"
+                    style={{ color: textColor }}
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    {node.title}
+                  </button>
+                )}
+                <span className="text-sm font-mono" style={{ color: textColorMuted }}>.</span>
+                {isEditingExtension ? (
+                  <input
+                    ref={extensionInputRef}
+                    className="bg-transparent text-sm font-mono outline-none w-16"
+                    style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
+                    value={node.extension}
+                    onChange={(e) => onUpdate(node.id, { extension: e.target.value })}
+                    onBlur={() => setIsEditingExtension(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") setIsEditingExtension(false)
+                    }}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-mono transition-colors truncate"
+                    style={{ color: textColor }}
+                    onClick={() => setIsEditingExtension(true)}
+                  >
+                    {node.extension}
+                  </button>
+                )}
+              </div>
+            ) : isEditingTitle ? (
               <div className="no-drag flex items-center">
                 <input
                   ref={titleInputRef}
@@ -328,7 +384,7 @@ export function SkillNodeComponent({
                   }}
                 />
                 <span className="text-sm font-mono" style={{ color: textColorMuted }}>
-                  .md
+                  .{node.extension}
                 </span>
               </div>
             ) : (
@@ -337,7 +393,7 @@ export function SkillNodeComponent({
                 style={{ color: textColor }}
                 onClick={() => setIsEditingTitle(true)}
               >
-                {node.title}.md
+                {node.title}.{node.extension}
               </button>
             )}
           </div>

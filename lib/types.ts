@@ -8,6 +8,7 @@ export interface SkillNode {
   width: number
   height: number
   title: string
+  extension: string
   content: string
   locked: boolean
 }
@@ -24,6 +25,7 @@ export const NODE_CONFIGS: Record<
     bg: string
     badge: string
     defaultTitle: string
+    defaultExtension: string
     defaultContent: string
   }
 > = {
@@ -31,6 +33,7 @@ export const NODE_CONFIGS: Record<
     bg: "#111111",
     badge: "main",
     defaultTitle: "skill",
+    defaultExtension: "md",
     defaultContent: `---
 name: your-skill-name
 description: This skill should be used when the user asks to "specific phrase 1" or "specific phrase 2".
@@ -65,6 +68,7 @@ A brief statement of what this skill achieves (e.g., "Standardize React Componen
     bg: "#222222",
     badge: "reference",
     defaultTitle: "reference",
+    defaultExtension: "md",
     defaultContent: `# [Resource Name] Reference
 
 > **Context:** Brief 1-sentence description of what this data is (e.g., "Standard API error codes and resolution steps for the Billing Skill").
@@ -110,12 +114,14 @@ List any specific "gotchas" or limitations found in this data.
     bg: "#333333",
     badge: "asset",
     defaultTitle: "asset",
+    defaultExtension: "md",
     defaultContent: ``,
   },
   script: {
     bg: "#EEEEEE",
     badge: "script",
     defaultTitle: "script",
+    defaultExtension: "txt",
     defaultContent: ``,
   },
 }

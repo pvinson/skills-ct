@@ -39,6 +39,7 @@ function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNo
     width: 600,
     height: 600,
     title: getUniqueTitle(type, existingNodes),
+    extension: config.defaultExtension,
     content: config.defaultContent,
     locked: false,
   }
