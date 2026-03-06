@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Save, XCircle, AlertTriangle } from "lucide-react"
+import { Save, XCircle, AlertTriangle, Download } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
@@ -256,6 +256,21 @@ export default function Home() {
             </div>
             <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#ef4444" }}>
               Cancel
+            </span>
+          </button>
+          <button
+            onClick={handleSave}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            style={{ width: "fit-content" }}
+          >
+            <div
+              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+            >
+              <Download size={16} />
+            </div>
+            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
+              Download
             </span>
           </button>
         </div>
