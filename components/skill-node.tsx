@@ -436,7 +436,7 @@ export function SkillNodeComponent({
                   whiteSpace: "pre-wrap",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
-                  lineHeight: "1.625",
+                  lineHeight: "22.75px",
                   // Match textarea width: full width minus line numbers (2.5rem + padding)
                   width: `calc(${node.width}px - 2.5rem - 24px - 2px)`,
                   padding: "0",
@@ -462,7 +462,7 @@ export function SkillNodeComponent({
                       display: "flex",
                       alignItems: "flex-start",
                       paddingTop: "0px",
-                      lineHeight: "1.625",
+                      lineHeight: "22.75px",
                     }}
                   >
                     {index + 1}
@@ -475,7 +475,7 @@ export function SkillNodeComponent({
                 className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
                 style={{ 
                   caretColor: "white",
-                  lineHeight: "1.625",
+                  lineHeight: "22.75px",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   whiteSpace: "pre-wrap",
