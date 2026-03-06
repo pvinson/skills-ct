@@ -39,6 +39,8 @@ export function SkillNodeComponent({
   const titleInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const lineNumbersRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+  const [lineHeights, setLineHeights] = useState<number[]>([])
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -150,6 +152,26 @@ export function SkillNodeComponent({
       lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
     }
   }, [])
+
+  // Calculate line heights for soft wrapping
+  useEffect(() => {
+    if (!measureRef.current || node.type === "asset") return
+    
+    const measure = measureRef.current
+    const lines = node.content.split("\n")
+    const baseLineHeight = 22.75 // 14px * 1.625 line-height
+    
+    const heights = lines.map((line) => {
+      if (!line || line.trim() === "") {
+        return baseLineHeight
+      }
+      measure.textContent = line || " "
+      const height = measure.offsetHeight
+      return height || baseLineHeight
+    })
+    
+    setLineHeights(heights)
+  }, [node.content, node.width, node.type])
 
   return (
     <div
@@ -367,7 +389,26 @@ export function SkillNodeComponent({
               </button>
             </div>
           ) : (
-            <div className="no-drag flex h-full overflow-hidden">
+            <div className="no-drag flex h-full overflow-hidden relative">
+              {/* Hidden measurement div for calculating wrapped line heights */}
+              <div
+                ref={measureRef}
+                className="absolute text-sm font-mono p-0"
+                style={{
+                  visibility: "hidden",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  lineHeight: "1.625",
+                  // Match textarea width: full width minus line numbers (2.5rem + padding)
+                  width: `calc(${node.width}px - 2.5rem - 24px - 2px)`,
+                  padding: "0",
+                }}
+                aria-hidden="true"
+              />
               {/* Line numbers */}
               <div
                 ref={lineNumbersRef}
@@ -375,11 +416,21 @@ export function SkillNodeComponent({
                 style={{
                   minWidth: "2.5rem",
                   borderRight: "1px solid rgba(255,255,255,0.1)",
-                  lineHeight: "1.625",
                 }}
               >
                 {node.content.split("\n").map((_, index) => (
-                  <div key={index}>{index + 1}</div>
+                  <div 
+                    key={index}
+                    style={{ 
+                      height: lineHeights[index] || 22.75,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      paddingTop: "0px",
+                      lineHeight: "1.625",
+                    }}
+                  >
+                    {index + 1}
+                  </div>
                 ))}
               </div>
               {/* Text content with word wrap */}
