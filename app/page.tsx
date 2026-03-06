@@ -1,13 +1,25 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import Link from "next/link"
-import { Save, XCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Save, XCircle, AlertTriangle } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function Home() {
+  const router = useRouter()
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  
   const {
     nodes,
     connections,
@@ -197,11 +209,14 @@ export default function Home() {
     URL.revokeObjectURL(url)
   }, [nodes])
 
-  const handleCancel = useCallback(() => {
-    if (window.confirm("Are you sure you want to reset? All changes will be lost.")) {
-      window.location.reload()
-    }
+  const handleCancelClick = useCallback(() => {
+    setShowCancelDialog(true)
   }, [])
+
+  const handleConfirmCancel = useCallback(() => {
+    setShowCancelDialog(false)
+    router.push("/home")
+  }, [router])
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background relative">
@@ -229,7 +244,7 @@ export default function Home() {
             </span>
           </button>
           <button
-            onClick={handleCancel}
+            onClick={handleCancelClick}
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             style={{ width: "fit-content" }}
           >
@@ -266,6 +281,46 @@ export default function Home() {
         onAddScript={handleAddScript}
         onFormatText={handleFormatText}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div
+                className="flex items-center justify-center h-10 w-10 rounded-lg"
+                style={{ background: "rgba(239,68,68,0.19)" }}
+              >
+                <AlertTriangle size={20} style={{ color: "#ef4444" }} />
+              </div>
+              <DialogTitle>Cancel this skill?</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              Are you sure you want to cancel? A canceled project is not recoverable and all your progress will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <button
+              onClick={() => setShowCancelDialog(false)}
+              className="group flex items-center justify-center gap-2 h-10 px-4 rounded-lg transition-all duration-200 border border-border hover:bg-muted"
+            >
+              <span className="text-sm font-medium text-foreground">
+                Continue this skill
+              </span>
+            </button>
+            <button
+              onClick={handleConfirmCancel}
+              className="group flex items-center justify-center gap-2 h-10 px-4 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(239,68,68,0.19)", color: "#ef4444" }}
+            >
+              <XCircle size={16} />
+              <span className="text-sm font-medium">
+                Cancel this skill
+              </span>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
