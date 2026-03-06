@@ -28,7 +28,7 @@ export const NODE_CONFIGS: Record<
   }
 > = {
   main: {
-    bg: "#404040",
+    bg: "#222222",
     badge: "main",
     defaultTitle: "skill",
     defaultContent: `---
@@ -64,7 +64,7 @@ A brief statement of what this skill achieves (e.g., "Standardize React Componen
 `,
   },
   reference: {
-    bg: "#808080",
+    bg: "#444444",
     badge: "reference",
     defaultTitle: "reference",
     defaultContent: `# [Resource Name] Reference
@@ -107,7 +107,7 @@ List any specific "gotchas" or limitations found in this data.
 `,
   },
   asset: {
-    bg: "#606060",
+    bg: "#666666",
     badge: "asset",
     defaultTitle: "asset",
     defaultContent: ``,
