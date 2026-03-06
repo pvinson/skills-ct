@@ -110,8 +110,9 @@ export function useNodeStore() {
         { id: connId, fromNodeId, toNodeId },
       ])
 
-      // Add markdown reference to target node
-      const refLine = `\n@${fromNode.title}.md`
+      // Add markdown reference to target node with proper subdirectory
+      const subdirectory = fromNode.type === "reference" ? "reference" : "asset"
+      const refLine = `\n[${fromNode.title}](${subdirectory}/${fromNode.title}.md)`
       setNodes((prev) =>
         prev.map((n) =>
           n.id === toNodeId
