@@ -325,7 +325,12 @@ export function SkillNodeComponent({
             {node.type !== "main" && (
               <div className="no-drag relative" ref={menuRef}>
                 <button
-                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
+                  className="flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-full"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    background: "rgba(255,255,255,0.12)",
+                  }}
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowMenu((prev) => !prev)
