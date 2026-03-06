@@ -44,7 +44,7 @@ export function SkillNodeComponent({
   const [lineHeights, setLineHeights] = useState<number[]>([])
 
   const config = NODE_CONFIGS[node.type]
-  const hasInput = node.type === "main"
+  const hasInput = node.type === "main" || node.type === "reference"
   const hasOutput = node.type !== "main"
 
   // Node dragging
