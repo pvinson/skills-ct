@@ -296,6 +296,14 @@ export function SkillNodeComponent({
                   className="flex items-center gap-1.5"
                   title={`${lineCount} / 500 lines`}
                 >
+                  {lineCount >= 500 && (
+                    <span
+                      className="text-xs font-mono"
+                      style={{ color: "#ef4444" }}
+                    >
+                      recommended max lines
+                    </span>
+                  )}
                   <span
                     className="text-xs font-mono"
                     style={{ color: meterColor }}
