@@ -279,6 +279,40 @@ export function SkillNodeComponent({
             {node.locked && (
               <Lock size={12} className="text-orange-400" />
             )}
+            {/* Line count meter - only for main node */}
+            {node.type === "main" && (() => {
+              const lineCount = node.content.split("\n").length
+              const percentage = Math.min((lineCount / 500) * 100, 100)
+              const getMeterColor = () => {
+                if (lineCount <= 150) return "#22c55e" // green
+                if (lineCount <= 250) return "#eab308" // yellow
+                if (lineCount <= 350) return "#f97316" // orange
+                return "#ef4444" // red
+              }
+              return (
+                <div 
+                  className="flex items-center gap-1.5"
+                  title={`${lineCount} / 500 lines`}
+                >
+                  <div
+                    className="relative overflow-hidden rounded-full"
+                    style={{
+                      width: 40,
+                      height: 6,
+                      background: "rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    <div
+                      className="absolute left-0 top-0 h-full rounded-full transition-all duration-200"
+                      style={{
+                        width: `${percentage}%`,
+                        background: getMeterColor(),
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })()}
             <span
               className="text-[10px] font-mono px-2 py-0.5 rounded-full"
               style={{
