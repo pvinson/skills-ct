@@ -290,11 +290,18 @@ export function SkillNodeComponent({
                 if (lineCount <= 350) return "#f97316" // orange
                 return "#ef4444" // red
               }
+              const meterColor = getMeterColor()
               return (
                 <div 
                   className="flex items-center gap-1.5"
                   title={`${lineCount} / 500 lines`}
                 >
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: meterColor }}
+                  >
+                    {lineCount}
+                  </span>
                   <div
                     className="relative overflow-hidden rounded-full"
                     style={{
@@ -307,7 +314,7 @@ export function SkillNodeComponent({
                       className="absolute left-0 top-0 h-full rounded-full transition-all duration-200"
                       style={{
                         width: `${percentage}%`,
-                        background: getMeterColor(),
+                        background: meterColor,
                       }}
                     />
                   </div>
