@@ -621,7 +621,7 @@ export function SkillNodeComponent({
                 }}
               >
                 <Upload size={24} className="text-foreground/50" />
-                <span className="text-xs font-mono text-foreground/50">Upload</span>
+                <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
               </button>
             </div>
           ) : (
