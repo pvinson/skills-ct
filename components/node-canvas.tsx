@@ -396,34 +396,7 @@ export function NodeCanvas({
                   <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
                 </circle>
               )}
-              {invalidSnap && (
-                <g>
-                  <circle
-                    cx={invalidSnap.x}
-                    cy={invalidSnap.y}
-                    r={12}
-                    fill="#ef4444"
-                  />
-                  <line
-                    x1={invalidSnap.x - 5}
-                    y1={invalidSnap.y - 5}
-                    x2={invalidSnap.x + 5}
-                    y2={invalidSnap.y + 5}
-                    stroke="white"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1={invalidSnap.x + 5}
-                    y1={invalidSnap.y - 5}
-                    x2={invalidSnap.x - 5}
-                    y2={invalidSnap.y + 5}
-                    stroke="white"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                  />
-                </g>
-              )}
+              
             </>
           )}
 
@@ -467,6 +440,41 @@ export function NodeCanvas({
             </g>
           )}
         </svg>
+
+        {/* Invalid connection indicator - highest z-index within transform layer */}
+        {invalidSnap && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: invalidSnap.x,
+              top: invalidSnap.y,
+              transform: "translate(-50%, -50%)",
+              zIndex: 9999,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="12" fill="#ef4444" />
+              <line
+                x1="7"
+                y1="7"
+                x2="17"
+                y2="17"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="17"
+                y1="7"
+                x2="7"
+                y2="17"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
 
         {/* Nodes */}
         {nodes.map((node) => (
