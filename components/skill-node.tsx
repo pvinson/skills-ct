@@ -633,11 +633,11 @@ export function SkillNodeComponent({
                 onChange={handleFileSelect}
               />
               
-              {/* Thumbnail preview area */}
-              {node.assetFile && (
-                <div className="mb-3 flex-shrink-0">
+              {node.assetFile ? (
+                /* Full-size thumbnail preview when file is uploaded */
+                <div className="flex-1 flex items-center justify-center w-full h-full overflow-hidden">
                   <div 
-                    className="relative inline-block rounded-lg overflow-hidden"
+                    className="relative w-full h-full rounded-lg overflow-hidden flex items-center justify-center"
                     style={{
                       background: "rgba(255,255,255,0.06)",
                       border: "1px solid rgba(255,255,255,0.15)",
@@ -647,15 +647,15 @@ export function SkillNodeComponent({
                       <img
                         src={node.assetFile.dataUrl}
                         alt={node.assetFile.name}
-                        className="max-w-[120px] max-h-[80px] object-contain"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
-                      <div className="flex items-center justify-center w-[80px] h-[60px]">
+                      <div className="flex items-center justify-center w-full h-full">
                         <div className="text-center">
-                          <div className="text-lg font-mono text-foreground/70 uppercase">
+                          <div className="text-3xl font-mono text-foreground/70 uppercase">
                             {node.extension}
                           </div>
-                          <div className="text-[10px] font-mono text-foreground/40 truncate max-w-[70px]">
+                          <div className="text-xs font-mono text-foreground/40 truncate max-w-full px-4 mt-2">
                             {node.assetFile.name}
                           </div>
                         </div>
@@ -663,33 +663,33 @@ export function SkillNodeComponent({
                     )}
                   </div>
                 </div>
+              ) : (
+                /* Upload button when no file is uploaded */
+                <div className="flex-1 flex items-center justify-center">
+                  <button
+                    className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px dashed rgba(255,255,255,0.25)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.1)"
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.06)"
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      fileInputRef.current?.click()
+                    }}
+                  >
+                    <Upload size={24} className="text-foreground/50" />
+                    <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
+                  </button>
+                </div>
               )}
-              
-              {/* Upload button */}
-              <div className="flex-1 flex items-center justify-center">
-                <button
-                  className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px dashed rgba(255,255,255,0.25)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.06)"
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    fileInputRef.current?.click()
-                  }}
-                >
-                  <Upload size={24} className="text-foreground/50" />
-                  <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
-                </button>
-              </div>
             </div>
           ) : (
             <div className="no-drag node-content-area flex h-full overflow-hidden relative">
