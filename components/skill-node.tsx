@@ -49,7 +49,7 @@ export function SkillNodeComponent({
   const [scrollTop, setScrollTop] = useState(0)
 
   const config = NODE_CONFIGS[node.type]
-  const hasInput = node.type === "main" || node.type === "reference" || node.type === "script"
+  const hasInput = node.type === "main" || node.type === "reference"
   const hasOutput = node.type !== "main"
   const isLightBg = node.type === "script"
   const textColor = isLightBg ? "#111111" : "rgba(255,255,255,0.9)"
