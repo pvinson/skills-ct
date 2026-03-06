@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import type { SkillNode as SkillNodeType } from "@/lib/types"
+import type { SkillNode as SkillNodeType, Connection } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
 import { MoreVertical, Copy, Type, Lock, Unlock, Trash2, Upload, Link } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
@@ -16,6 +16,8 @@ interface SkillNodeProps {
   onConnectionStart: (nodeId: string, e: React.MouseEvent) => void
   canvasOffset: { x: number; y: number }
   canvasScale: number
+  connections: Connection[]
+  allNodes: SkillNodeType[]
 }
 
 export function SkillNodeComponent({
@@ -28,6 +30,8 @@ export function SkillNodeComponent({
   onConnectionStart,
   canvasOffset,
   canvasScale,
+  connections,
+  allNodes,
 }: SkillNodeProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -42,10 +46,60 @@ export function SkillNodeComponent({
   const lineNumbersRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [lineHeights, setLineHeights] = useState<number[]>([])
+  const [scrollTop, setScrollTop] = useState(0)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main" || node.type === "reference"
   const hasOutput = node.type !== "main"
+
+  // Get connected node titles for this node
+  const connectedNodeTitles = connections
+    .filter((c) => c.toNodeId === node.id)
+    .map((c) => {
+      const fromNode = allNodes.find((n) => n.id === c.fromNodeId)
+      return fromNode?.title
+    })
+    .filter(Boolean) as string[]
+
+  // Function to check if a markdown link reference is valid (connected)
+  const isValidReference = useCallback((linkText: string, linkPath: string) => {
+    // Extract the filename from the path (e.g., "reference/api.md" -> "api")
+    const match = linkPath.match(/(?:reference|asset)\/(.+)\.md$/)
+    if (!match) return true // Not a reference/asset link, don't mark as invalid
+    const fileName = match[1]
+    return connectedNodeTitles.includes(fileName)
+  }, [connectedNodeTitles])
+
+  // Function to render content with invalid references highlighted in red
+  const renderHighlightedContent = useCallback(() => {
+    const content = node.content
+    // Match markdown links: [text](path)
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+    const parts: { text: string; isInvalidRef: boolean }[] = []
+    let lastIndex = 0
+    let match
+
+    while ((match = linkRegex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push({ text: content.slice(lastIndex, match.index), isInvalidRef: false })
+      }
+      
+      const [fullMatch, linkText, linkPath] = match
+      const isRefOrAssetLink = /^(reference|asset)\//.test(linkPath)
+      const isInvalid = isRefOrAssetLink && !isValidReference(linkText, linkPath)
+      
+      parts.push({ text: fullMatch, isInvalidRef: isInvalid })
+      lastIndex = match.index + fullMatch.length
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push({ text: content.slice(lastIndex), isInvalidRef: false })
+    }
+
+    return parts
+  }, [node.content, isValidReference])
 
   // Node dragging
   const handleMouseDown = useCallback(
@@ -147,10 +201,11 @@ export function SkillNodeComponent({
     }
   }, [isEditingTitle])
 
-  // Sync scroll between textarea and line numbers
+  // Sync scroll between textarea, line numbers, and highlight overlay
   const handleTextareaScroll = useCallback(() => {
     if (textareaRef.current && lineNumbersRef.current) {
       lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
+      setScrollTop(textareaRef.current.scrollTop)
     }
   }, [])
 
@@ -501,29 +556,57 @@ export function SkillNodeComponent({
                 ))}
               </div>
               {/* Text content with word wrap */}
-              <textarea
-                ref={textareaRef}
-                className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
-                style={{ 
-                  caretColor: "white",
-                  lineHeight: "1.5",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  whiteSpace: "pre-wrap",
-                }}
-                value={node.content}
-                onChange={(e) => {
-                  if (!node.locked) onUpdate(node.id, { content: e.target.value })
-                }}
-                onScroll={handleTextareaScroll}
-                readOnly={node.locked}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelect(node.id)
-                }}
-                spellCheck={false}
-                placeholder="Start typing..."
-              />
+              <div className="relative flex-1 w-full h-full">
+                {/* Highlight overlay for invalid references */}
+                <div
+                  className="absolute inset-0 text-sm font-mono p-3 pointer-events-none overflow-hidden"
+                  style={{ 
+                    lineHeight: "1.5",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: `translateY(-${scrollTop}px)`,
+                    }}
+                  >
+                    {renderHighlightedContent().map((part, i) => (
+                      <span
+                        key={i}
+                        style={{ color: part.isInvalidRef ? "#ef4444" : "rgba(255,255,255,0.9)" }}
+                      >
+                        {part.text}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  className="absolute inset-0 w-full h-full resize-none bg-transparent text-sm font-mono p-3 outline-none"
+                  style={{ 
+                    caretColor: "white",
+                    lineHeight: "1.5",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "pre-wrap",
+                    color: "transparent",
+                  }}
+                  value={node.content}
+                  onChange={(e) => {
+                    if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                  }}
+                  onScroll={handleTextareaScroll}
+                  readOnly={node.locked}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelect(node.id)
+                  }}
+                  spellCheck={false}
+                  placeholder="Start typing..."
+                />
+              </div>
             </div>
           )}
         </div>

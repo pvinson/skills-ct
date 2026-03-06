@@ -431,6 +431,8 @@ export function NodeCanvas({
             onConnectionStart={handleConnectionStart}
             canvasOffset={offset}
             canvasScale={scale}
+            connections={connections}
+            allNodes={nodes}
           />
         ))}
       </div>
