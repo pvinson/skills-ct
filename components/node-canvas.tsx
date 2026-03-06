@@ -118,13 +118,33 @@ export function NodeCanvas({
     }
   }, [isPanning])
 
-  // Zoom
+  // Zoom - only on pinch-to-zoom (ctrlKey) or when not inside a node's content area
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      e.preventDefault()
-      const delta = e.deltaY > 0 ? 0.95 : 1.05
-      const newScale = Math.max(0.2, Math.min(3, scale * delta))
-      setScale(newScale)
+      // Pinch-to-zoom (trackpad) always zooms the canvas
+      const isPinchZoom = e.ctrlKey || e.metaKey
+      
+      // Check if the target is inside a node's scrollable content area
+      const target = e.target as HTMLElement
+      const isInsideNodeContent = target.closest(".node-content-area")
+      
+      if (isPinchZoom) {
+        // Pinch-to-zoom always controls canvas zoom
+        e.preventDefault()
+        const delta = e.deltaY > 0 ? 0.95 : 1.05
+        const newScale = Math.max(0.2, Math.min(3, scale * delta))
+        setScale(newScale)
+      } else if (isInsideNodeContent) {
+        // Regular scroll inside node content - let it scroll naturally
+        // Don't prevent default, let the textarea handle scroll
+        return
+      } else {
+        // Regular scroll outside nodes - zoom canvas
+        e.preventDefault()
+        const delta = e.deltaY > 0 ? 0.95 : 1.05
+        const newScale = Math.max(0.2, Math.min(3, scale * delta))
+        setScale(newScale)
+      }
     },
     [scale]
   )

@@ -389,7 +389,7 @@ export function SkillNodeComponent({
               </button>
             </div>
           ) : (
-            <div className="no-drag flex h-full overflow-hidden relative">
+            <div className="no-drag node-content-area flex h-full overflow-hidden relative">
               {/* Hidden measurement div for calculating wrapped line heights */}
               <div
                 ref={measureRef}
