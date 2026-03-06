@@ -39,8 +39,6 @@ export function SkillNodeComponent({
   const titleInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const lineNumbersRef = useRef<HTMLDivElement>(null)
-  const measureRef = useRef<HTMLDivElement>(null)
-  const [lineHeights, setLineHeights] = useState<number[]>([])
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -146,37 +144,7 @@ export function SkillNodeComponent({
     }
   }, [isEditingTitle])
 
-  // Sync scroll between textarea and line numbers
-  const handleTextareaScroll = useCallback(() => {
-    if (textareaRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
-    }
-  }, [])
 
-  // Calculate line heights for soft wrapping
-  useEffect(() => {
-    if (!measureRef.current || !textareaRef.current || node.type === "asset") return
-    
-    const measure = measureRef.current
-    const textarea = textareaRef.current
-    const lines = node.content.split("\n")
-    const baseLineHeight = 22.75 // 14px * 1.625 line-height
-    
-    // Use textarea's actual content width (clientWidth minus padding)
-    const textareaContentWidth = textarea.clientWidth - 24 // 12px padding on each side
-    measure.style.width = `${textareaContentWidth}px`
-    
-    const heights = lines.map((line) => {
-      if (!line || line.trim() === "") {
-        return baseLineHeight
-      }
-      measure.textContent = line || " "
-      const height = measure.offsetHeight
-      return height || baseLineHeight
-    })
-    
-    setLineHeights(heights)
-  }, [node.content, node.width, node.type])
 
   return (
     <div
@@ -428,74 +396,72 @@ export function SkillNodeComponent({
               </button>
             </div>
           ) : (
-            <div className="no-drag node-content-area flex h-full overflow-hidden relative">
-              {/* Hidden measurement div for calculating wrapped line heights */}
-              <div
-                ref={measureRef}
-                className="absolute text-sm font-mono p-0"
-                style={{
-                  visibility: "hidden",
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  lineHeight: "22.75px",
-                  padding: "0",
-                }}
-                aria-hidden="true"
-              />
-              {/* Line numbers - fixed position, syncs with textarea scroll */}
-              <div
-                ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30 overflow-hidden"
-                style={{
-                  minWidth: "2.5rem",
-                  borderRight: "1px solid rgba(255,255,255,0.1)",
-                  paddingTop: "12px",
-                  paddingBottom: "12px",
-                }}
-              >
-                {node.content.split("\n").map((_, index) => (
-                  <div 
-                    key={index}
-                    style={{ 
-                      height: lineHeights[index] || 22.75,
-                      display: "flex",
-                      alignItems: "flex-start",
-                      paddingTop: "0px",
+            <div className="no-drag node-content-area h-full overflow-auto relative" ref={lineNumbersRef}>
+              {/* Shared scrollable container with line numbers and content side by side */}
+              <div className="flex min-h-full">
+                {/* Line numbers column */}
+                <div
+                  className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30 sticky left-0 bg-inherit"
+                  style={{
+                    minWidth: "2.5rem",
+                    borderRight: "1px solid rgba(255,255,255,0.1)",
+                    paddingTop: "12px",
+                    paddingBottom: "12px",
+                  }}
+                >
+                  {node.content.split("\n").map((_, index) => (
+                    <div 
+                      key={index}
+                      style={{ 
+                        lineHeight: "22.75px",
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+                  ))}
+                </div>
+                {/* Content area with visible text and invisible textarea overlay */}
+                <div className="flex-1 relative">
+                  {/* Visible text display */}
+                  <pre
+                    className="text-sm font-mono text-foreground/90 p-3 pointer-events-none"
+                    style={{
                       lineHeight: "22.75px",
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                      margin: 0,
+                      minHeight: "100%",
                     }}
+                    aria-hidden="true"
                   >
-                    {index + 1}
-                  </div>
-                ))}
+                    {node.content || " "}
+                  </pre>
+                  {/* Invisible textarea for input */}
+                  <textarea
+                    ref={textareaRef}
+                    className="absolute inset-0 w-full h-full resize-none bg-transparent text-transparent text-sm font-mono p-3 outline-none"
+                    style={{ 
+                      caretColor: "white",
+                      lineHeight: "22.75px",
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                      whiteSpace: "pre-wrap",
+                    }}
+                    value={node.content}
+                    onChange={(e) => {
+                      if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                    }}
+                    readOnly={node.locked}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelect(node.id)
+                    }}
+                    spellCheck={false}
+                    placeholder="Start typing..."
+                  />
+                </div>
               </div>
-              {/* Text content with word wrap */}
-              <textarea
-                ref={textareaRef}
-                className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
-                style={{ 
-                  caretColor: "white",
-                  lineHeight: "22.75px",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  whiteSpace: "pre-wrap",
-                }}
-                value={node.content}
-                onChange={(e) => {
-                  if (!node.locked) onUpdate(node.id, { content: e.target.value })
-                }}
-                onScroll={handleTextareaScroll}
-                readOnly={node.locked}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelect(node.id)
-                }}
-                spellCheck={false}
-                placeholder="Start typing..."
-              />
             </div>
           )}
         </div>
