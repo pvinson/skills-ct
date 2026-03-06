@@ -6,7 +6,29 @@ import { NODE_CONFIGS } from "@/lib/types"
 
 let nodeCounter = 0
 
-function createNode(type: NodeType, x: number, y: number): SkillNode {
+function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
+  const config = NODE_CONFIGS[type]
+  const baseTitle = config.defaultTitle
+  
+  // Get all titles of nodes with the same type
+  const existingTitles = existingNodes
+    .filter((n) => n.type === type)
+    .map((n) => n.title)
+  
+  // If the base title is not taken, use it
+  if (!existingTitles.includes(baseTitle)) {
+    return baseTitle
+  }
+  
+  // Otherwise, find the next available number
+  let counter = 2
+  while (existingTitles.includes(`${baseTitle}-${counter}`)) {
+    counter++
+  }
+  return `${baseTitle}-${counter}`
+}
+
+function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNode[]): SkillNode {
   nodeCounter++
   const config = NODE_CONFIGS[type]
   return {
@@ -16,7 +38,7 @@ function createNode(type: NodeType, x: number, y: number): SkillNode {
     y,
     width: 600,
     height: 600,
-    title: config.defaultTitle,
+    title: getUniqueTitle(type, existingNodes),
     content: config.defaultContent,
     locked: false,
   }
@@ -24,7 +46,7 @@ function createNode(type: NodeType, x: number, y: number): SkillNode {
 
 export function useNodeStore() {
   const [nodes, setNodes] = useState<SkillNode[]>(() => {
-    const mainNode = createNode("main", 200, 100)
+    const mainNode = createNode("main", 200, 100, [])
     return [mainNode]
   })
   const [connections, setConnections] = useState<Connection[]>([])
@@ -33,10 +55,10 @@ export function useNodeStore() {
   const addNode = useCallback((type: NodeType, x?: number, y?: number): SkillNode => {
     const posX = x ?? 250 + Math.random() * 200
     const posY = y ?? 100 + Math.random() * 200
-    const node = createNode(type, posX, posY)
+    const node = createNode(type, posX, posY, nodes)
     setNodes((prev) => [...prev, node])
     return node
-  }, [])
+  }, [nodes])
 
   const updateNode = useCallback((id: string, updates: Partial<SkillNode>) => {
     setNodes((prev) =>
