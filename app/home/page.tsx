@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
 
 interface Skill {
   id: string
@@ -137,6 +138,7 @@ function formatDate(dateString: string): string {
 
 function SkillCard({ skill }: { skill: Skill }) {
   const router = useRouter()
+  const { toast } = useToast()
   const [copied, setCopied] = useState(false)
   
   const skillSlug = skill.name.replace(".md", "")
@@ -146,6 +148,7 @@ function SkillCard({ skill }: { skill: Skill }) {
     e.stopPropagation()
     await navigator.clipboard.writeText(downloadCommand)
     setCopied(true)
+    toast({ description: "Link copied to clipboard" })
     setTimeout(() => setCopied(false), 2000)
   }
 
