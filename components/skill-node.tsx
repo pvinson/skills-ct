@@ -298,7 +298,7 @@ export function SkillNodeComponent({
                     className="relative overflow-hidden rounded-full"
                     style={{
                       width: 40,
-                      height: 6,
+                      height: 18,
                       background: "rgba(255,255,255,0.1)",
                     }}
                   >
