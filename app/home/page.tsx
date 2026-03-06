@@ -244,11 +244,6 @@ export default function HomePage() {
 
     // Filter by tab
     switch (activeTab) {
-      case "newest":
-        skills = [...skills].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        break
       case "goated":
         skills = skills.filter((skill) => skill.isGoated)
         break
@@ -313,15 +308,11 @@ export default function HomePage() {
           <div className="flex justify-center">
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="newest">Newest</TabsTrigger>
               <TabsTrigger value="goated">Goated</TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="all" className="mt-6">
-            <SkillGrid skills={filteredSkills} />
-          </TabsContent>
-          <TabsContent value="newest" className="mt-6">
             <SkillGrid skills={filteredSkills} />
           </TabsContent>
           <TabsContent value="goated" className="mt-6">
