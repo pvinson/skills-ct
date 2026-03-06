@@ -54,11 +54,11 @@ A brief statement of what this skill achieves (e.g., "Standardize React Componen
 - **Example 2 Name**: [Example code or expected behavior goes here]
 
 ## References
-- [reference-name](reference/reference.md)
-- [asset-name](assets/your-asset-name.ttf)
-- [asset-name](assets/your-asset-name.png)
-- [script-name](scripts/your-script-name.py)
-- [script-name](scripts/your-script-name.js)
+- [Reference Name](reference/reference-name.md)
+- [Asset Name](assets/asset-name.ttf)
+- [Asset Name](assets/asset-name.png)
+- [Script Name](scripts/script-name.py)
+- [Script Name](scripts/script-name.js)
 `,
   },
   reference: {
@@ -99,11 +99,11 @@ List any specific "gotchas" or limitations found in this data.
 - **Warning:** "Do not use these values for production environments."
 
 ## References
-- [reference-name](reference/reference.md)
-- [asset-name](assets/your-asset-name.ttf)
-- [asset-name](assets/your-asset-name.png)
-- [script-name](scripts/your-script-name.py)
-- [script-name](scripts/your-script-name.js)
+- [Reference Name](reference/reference-name.md)
+- [Asset Name](assets/asset-name.ttf)
+- [Asset Name](assets/asset-name.png)
+- [Script Name](scripts/script-name.py)
+- [Script Name](scripts/script-name.js)
 `,
   },
   asset: {
