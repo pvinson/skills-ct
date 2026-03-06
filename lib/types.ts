@@ -114,7 +114,7 @@ List any specific "gotchas" or limitations found in this data.
     bg: "#333333",
     badge: "asset",
     defaultTitle: "asset",
-    defaultExtension: "md",
+    defaultExtension: "png",
     defaultContent: ``,
   },
   script: {

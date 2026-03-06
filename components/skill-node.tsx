@@ -323,8 +323,8 @@ export function SkillNodeComponent({
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            {node.type === "script" ? (
-              // Script node: both title and extension are editable
+            {(node.type === "script" || node.type === "asset") ? (
+              // Script and Asset nodes: both title and extension are editable
               <div className="no-drag flex items-center">
                 {isEditingTitle ? (
                   <input
