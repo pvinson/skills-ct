@@ -446,7 +446,7 @@ export function SkillNodeComponent({
               {/* Line numbers */}
               <div
                 ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono text-foreground/30 overflow-hidden"
+                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-sm font-mono text-foreground/30 overflow-hidden"
                 style={{
                   minWidth: "2.5rem",
                   borderRight: "1px solid rgba(255,255,255,0.1)",
