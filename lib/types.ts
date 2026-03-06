@@ -34,7 +34,6 @@ export const NODE_CONFIGS: Record<
     defaultContent: `---
 name: your-skill-name
 description: This skill should be used when the user asks to "specific phrase 1" or "specific phrase 2".
-version: 1.0.0
 ---
 
 # Skill Goal
