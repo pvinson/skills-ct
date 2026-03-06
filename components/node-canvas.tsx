@@ -72,13 +72,8 @@ export function NodeCanvas({
         const screenY = inputPos.y * scale + offset.y + rect.top
         const dist = Math.hypot(mouseX - screenX, mouseY - screenY)
         if (dist <= SNAP_DISTANCE && (!closest || dist < closest.dist)) {
-          // Check if this is an invalid connection
-          // Invalid: reference -> reference, reference -> script, script -> reference, script -> script
-          const sourceType = sourceNode?.type
-          const targetType = n.type
-          const isInvalid = 
-            (sourceType === "reference" && (targetType === "reference" || targetType === "script")) ||
-            (sourceType === "script" && (targetType === "reference" || targetType === "script"))
+          // Check if this is an invalid connection (reference to reference)
+          const isInvalid = sourceNode?.type === "reference" && n.type === "reference"
           closest = { nodeId: n.id, pos: inputPos, dist, isInvalid }
         }
       }
@@ -217,12 +212,7 @@ export function NodeCanvas({
               // Check if this would be an invalid connection
               const sourceNode = nodes.find((n) => n.id === connectingFrom)
               const targetNode = nodes.find((n) => n.id === targetNodeId)
-              const sourceType = sourceNode?.type
-              const targetType = targetNode?.type
-              const isInvalidConnection = 
-                (sourceType === "reference" && (targetType === "reference" || targetType === "script")) ||
-                (sourceType === "script" && (targetType === "reference" || targetType === "script"))
-              if (!isInvalidConnection) {
+              if (!(sourceNode?.type === "reference" && targetNode?.type === "reference")) {
                 onAddConnection(connectingFrom, targetNodeId)
               }
             }
