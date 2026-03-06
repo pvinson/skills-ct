@@ -47,7 +47,7 @@ A brief statement of what this skill achieves (e.g., "Standardize React Componen
 ## Instructions & Workflow
 1. **Step 1 Name**: Examine the…
 2. **Step 2 Name**: Draft a…
-3. **Step 3 Name**: Implement…using the [Your Reference Name](references/your-reference-name.md).
+3. **Step 3 Name**: Implement…using the [Reference Name](reference/reference-name.md).
 
 ## Examples
 - **Example 1 Name**: [Example code or expected behavior goes here]
