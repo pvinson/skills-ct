@@ -155,11 +155,16 @@ export function SkillNodeComponent({
 
   // Calculate line heights for soft wrapping
   useEffect(() => {
-    if (!measureRef.current || node.type === "asset") return
+    if (!measureRef.current || !textareaRef.current || node.type === "asset") return
     
     const measure = measureRef.current
+    const textarea = textareaRef.current
     const lines = node.content.split("\n")
     const baseLineHeight = 22.75 // 14px * 1.625 line-height
+    
+    // Use textarea's actual content width (clientWidth minus padding)
+    const textareaContentWidth = textarea.clientWidth - 24 // 12px padding on each side
+    measure.style.width = `${textareaContentWidth}px`
     
     const heights = lines.map((line) => {
       if (!line || line.trim() === "") {
@@ -437,8 +442,6 @@ export function SkillNodeComponent({
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   lineHeight: "22.75px",
-                  // Match textarea width: full width minus line numbers (2.5rem + padding)
-                  width: `calc(${node.width}px - 2.5rem - 24px - 2px)`,
                   padding: "0",
                 }}
                 aria-hidden="true"
