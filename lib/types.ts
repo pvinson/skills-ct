@@ -28,7 +28,7 @@ export const NODE_CONFIGS: Record<
   }
 > = {
   main: {
-    bg: "#333333",
+    bg: "#111111",
     badge: "main",
     defaultTitle: "skill",
     defaultContent: `---
@@ -107,7 +107,7 @@ List any specific "gotchas" or limitations found in this data.
 `,
   },
   asset: {
-    bg: "#606060",
+    bg: "#333333",
     badge: "asset",
     defaultTitle: "asset",
     defaultContent: ``,
