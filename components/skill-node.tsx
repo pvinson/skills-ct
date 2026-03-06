@@ -394,6 +394,54 @@ export function SkillNodeComponent({
             >
               {config.badge}
             </span>
+            {node.type === "main" && (
+              <div className="no-drag relative" ref={menuRef}>
+                <button
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu((prev) => !prev)
+                  }}
+                >
+                  <MoreVertical size={14} />
+                </button>
+                {showMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-1 w-40 rounded-lg overflow-hidden z-40"
+                    style={{
+                      background: "rgba(30,30,30,0.97)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(12px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowMenu(false)
+                        setIsEditingTitle(true)
+                      }}
+                    >
+                      <Type size={13} />
+                      Rename
+                    </button>
+                    <button
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onUpdate(node.id, { locked: !node.locked })
+                        setShowMenu(false)
+                      }}
+                    >
+                      {node.locked ? <Unlock size={13} /> : <Lock size={13} />}
+                      {node.locked ? "Unlock" : "Lock"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             {node.type !== "main" && (
               <div className="no-drag relative" ref={menuRef}>
                 <button
