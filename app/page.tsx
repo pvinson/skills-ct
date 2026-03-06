@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
+import Link from "next/link"
 import { Save, XCircle } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
@@ -206,9 +207,11 @@ export default function Home() {
     <div className="h-screen w-screen overflow-hidden bg-background relative">
       {/* Header */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans">
-          skills.ct
-        </h1>
+        <Link href="/home">
+          <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
+            skills.ct
+          </h1>
+        </Link>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
