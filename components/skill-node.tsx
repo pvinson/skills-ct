@@ -446,15 +446,17 @@ export function SkillNodeComponent({
                 }}
                 aria-hidden="true"
               />
-              {/* Line numbers - fixed position, syncs with textarea scroll */}
+              {/* Line numbers - scrolls in sync with textarea */}
               <div
                 ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30 overflow-hidden"
+                className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30 overflow-y-auto scrollbar-hide"
                 style={{
                   minWidth: "2.5rem",
                   borderRight: "1px solid rgba(255,255,255,0.1)",
                   paddingTop: "12px",
                   paddingBottom: "12px",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                 }}
               >
                 {node.content.split("\n").map((_, index) => (
