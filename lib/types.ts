@@ -54,12 +54,11 @@ A brief statement of what this skill achieves (e.g., "Standardize React Componen
 - **Example 2 Name**: [Example code or expected behavior goes here]
 
 ## References
-- [Your Reference Name](references/your-reference-name.md)
-- [Your Asset Name](assets/your-asset-name.ttf)
-- [Your Asset Name](assets/your-asset-name.png)
-- [Your Script Name](scripts/your-script-name.py)
-- [Your Script Name](scripts/your-script-name.js)
-- [Your Rule Name](rules/your-rule-name.js)
+- [reference-name](reference/reference.md)
+- [asset-name](assets/your-asset-name.ttf)
+- [asset-name](assets/your-asset-name.png)
+- [script-name](scripts/your-script-name.py)
+- [script-name](scripts/your-script-name.js)
 `,
   },
   reference: {
