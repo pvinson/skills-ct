@@ -50,6 +50,7 @@ export function SkillNodeComponent({
   const [lineHeights, setLineHeights] = useState<number[]>([])
   const [scrollTop, setScrollTop] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -246,6 +247,47 @@ export function SkillNodeComponent({
     }
     reader.readAsDataURL(file)
   }, [node.id, onUpdate])
+
+  // Handle drag-and-drop for asset nodes
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (node.type === "asset") {
+      setIsDragOver(true)
+    }
+  }, [node.type])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    if (node.type !== "asset") return
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      onUpdate(node.id, {
+        assetFile: {
+          name: file.name,
+          type: file.type,
+          dataUrl: dataUrl,
+        },
+        title: file.name.split('.').slice(0, -1).join('.') || file.name,
+        extension: file.name.split('.').pop() || '',
+      })
+    }
+    reader.readAsDataURL(file)
+  }, [node.id, node.type, onUpdate])
 
   // Calculate line heights for soft wrapping
   useEffect(() => {
@@ -624,7 +666,18 @@ export function SkillNodeComponent({
         {/* Content */}
         <div className="flex-1 overflow-hidden p-1">
           {node.type === "asset" ? (
-            <div className="no-drag flex flex-col w-full h-full p-3">
+            <div 
+              className="no-drag flex flex-col w-full h-full p-3 transition-all duration-200"
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              style={{
+                background: isDragOver ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                border: isDragOver ? "2px dashed rgba(59, 130, 246, 0.5)" : "2px dashed transparent",
+                borderRadius: "8px",
+              }}
+            >
               {/* Hidden file input */}
               <input
                 ref={fileInputRef}
@@ -669,24 +722,28 @@ export function SkillNodeComponent({
                   <button
                     className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
                     style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px dashed rgba(255,255,255,0.25)",
+                      background: isDragOver ? "rgba(59, 130, 246, 0.15)" : "rgba(255,255,255,0.06)",
+                      border: isDragOver ? "1px dashed rgba(59, 130, 246, 0.6)" : "1px dashed rgba(255,255,255,0.25)",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
+                      if (!isDragOver) {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.1)"
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.06)"
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
+                      if (!isDragOver) {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.06)"
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
+                      }
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
                       fileInputRef.current?.click()
                     }}
                   >
-                    <Upload size={24} className="text-foreground/50" />
-                    <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
+                    <Upload size={24} className={isDragOver ? "text-blue-400" : "text-foreground/50"} />
+                    <span className={`text-xs font-mono text-center ${isDragOver ? "text-blue-400" : "text-foreground/50"}`}>Upload<br />or<br />Drag & Drop</span>
                   </button>
                 </div>
               )}
