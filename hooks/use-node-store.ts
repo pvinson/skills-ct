@@ -110,15 +110,31 @@ export function useNodeStore() {
         { id: connId, fromNodeId, toNodeId },
       ])
 
-      // Add markdown reference to target node with proper subdirectory
+      // Add markdown reference to target node's References section
       const subdirectory = fromNode.type === "reference" ? "reference" : "asset"
-      const refLine = `\n[${fromNode.title}](${subdirectory}/${fromNode.title}.md)`
+      const refLine = `- [${fromNode.title}](${subdirectory}/${fromNode.title}.md)`
+      
       setNodes((prev) =>
-        prev.map((n) =>
-          n.id === toNodeId
-            ? { ...n, content: n.content + refLine }
-            : n
-        )
+        prev.map((n) => {
+          if (n.id !== toNodeId) return n
+          
+          const content = n.content
+          const referencesMatch = content.match(/## References\n/)
+          
+          if (referencesMatch && referencesMatch.index !== undefined) {
+            // Find the position after "## References\n"
+            const insertPos = referencesMatch.index + referencesMatch[0].length
+            const newContent = 
+              content.slice(0, insertPos) + 
+              refLine + "\n" + 
+              content.slice(insertPos)
+            return { ...n, content: newContent }
+          } else {
+            // If no References section exists, add one at the end
+            const newContent = content + "\n\n## References\n" + refLine
+            return { ...n, content: newContent }
+          }
+        })
       )
     },
     [connections, nodes]
