@@ -49,6 +49,7 @@ export function SkillNodeComponent({
   const measureRef = useRef<HTMLDivElement>(null)
   const [lineHeights, setLineHeights] = useState<number[]>([])
   const [scrollTop, setScrollTop] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -223,6 +224,28 @@ export function SkillNodeComponent({
       setScrollTop(textareaRef.current.scrollTop)
     }
   }, [])
+
+  // Handle file selection for asset nodes
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      onUpdate(node.id, {
+        assetFile: {
+          name: file.name,
+          type: file.type,
+          dataUrl: dataUrl,
+        },
+        // Update title and extension based on file name
+        title: file.name.split('.').slice(0, -1).join('.') || file.name,
+        extension: file.name.split('.').pop() || '',
+      })
+    }
+    reader.readAsDataURL(file)
+  }, [node.id, onUpdate])
 
   // Calculate line heights for soft wrapping
   useEffect(() => {
@@ -601,28 +624,72 @@ export function SkillNodeComponent({
         {/* Content */}
         <div className="flex-1 overflow-hidden p-1">
           {node.type === "asset" ? (
-            <div className="no-drag flex items-center justify-center w-full h-full">
-              <button
-                className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px dashed rgba(255,255,255,0.25)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.06)"
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                <Upload size={24} className="text-foreground/50" />
-                <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
-              </button>
+            <div className="no-drag flex flex-col w-full h-full p-3">
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              
+              {/* Thumbnail preview area */}
+              {node.assetFile && (
+                <div className="mb-3 flex-shrink-0">
+                  <div 
+                    className="relative inline-block rounded-lg overflow-hidden"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                    }}
+                  >
+                    {node.assetFile.type.startsWith('image/') ? (
+                      <img
+                        src={node.assetFile.dataUrl}
+                        alt={node.assetFile.name}
+                        className="max-w-[120px] max-h-[80px] object-contain"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-[80px] h-[60px]">
+                        <div className="text-center">
+                          <div className="text-lg font-mono text-foreground/70 uppercase">
+                            {node.extension}
+                          </div>
+                          <div className="text-[10px] font-mono text-foreground/40 truncate max-w-[70px]">
+                            {node.assetFile.name}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Upload button */}
+              <div className="flex-1 flex items-center justify-center">
+                <button
+                  className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px dashed rgba(255,255,255,0.25)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.1)"
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.06)"
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    fileInputRef.current?.click()
+                  }}
+                >
+                  <Upload size={24} className="text-foreground/50" />
+                  <span className="text-xs font-mono text-foreground/50 text-center">Upload<br />or<br />Drag & Drop</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="no-drag node-content-area flex h-full overflow-hidden relative">

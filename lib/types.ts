@@ -11,6 +11,12 @@ export interface SkillNode {
   extension: string
   content: string
   locked: boolean
+  // Asset-specific properties
+  assetFile?: {
+    name: string
+    type: string
+    dataUrl: string
+  }
 }
 
 export interface Connection {
