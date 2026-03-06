@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import type { SkillNode as SkillNodeType } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
-import { MoreVertical, Copy, Type, Lock, Unlock, Trash2, Upload } from "lucide-react"
+import { MoreVertical, Copy, Type, Lock, Unlock, Trash2, Upload, Link } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 interface SkillNodeProps {
   node: SkillNodeType
@@ -344,28 +345,45 @@ export function SkillNodeComponent({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                   >
-                    <button
-                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDuplicate(node.id)
-                        setShowMenu(false)
-                      }}
-                    >
-                      <Copy size={13} />
-                      Duplicate
-                    </button>
-                    <button
-                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowMenu(false)
-                        setIsEditingTitle(true)
-                      }}
-                    >
-                      <Type size={13} />
-                      Rename
-                    </button>
+<button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDuplicate(node.id)
+                                        setShowMenu(false)
+                                      }}
+                                    >
+                                      <Copy size={13} />
+                                      Duplicate
+                                    </button>
+                                    <button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const subdirectory = node.type === "reference" ? "reference" : "asset"
+                                        const link = `[${node.title}](${subdirectory}/${node.title}.md)`
+                                        navigator.clipboard.writeText(link)
+                                        toast({
+                                          description: "Node link copied",
+                                          duration: 6000,
+                                        })
+                                        setShowMenu(false)
+                                      }}
+                                    >
+                                      <Link size={13} />
+                                      Copy link
+                                    </button>
+                                    <button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setShowMenu(false)
+                                        setIsEditingTitle(true)
+                                      }}
+                                    >
+                                      <Type size={13} />
+                                      Rename
+                                    </button>
                     <button
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
                       onClick={(e) => {
