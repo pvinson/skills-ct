@@ -247,7 +247,6 @@ export function SkillNodeComponent({
           className={`flex items-center justify-between px-4 py-3 ${node.locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           style={{
             borderBottom: "1px solid rgba(255,255,255,0.15)",
-            ...(node.type === "asset" && { background: "#333333" }),
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
