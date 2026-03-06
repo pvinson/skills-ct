@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Search, Plus, Download, Calendar, FileText } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -12,6 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface Skill {
   id: string
@@ -130,15 +136,70 @@ function formatDate(dateString: string): string {
 }
 
 function SkillCard({ skill }: { skill: Skill }) {
+  const router = useRouter()
+  const [copied, setCopied] = useState(false)
+  
+  const skillSlug = skill.name.replace(".md", "")
+  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    await navigator.clipboard.writeText(downloadCommand)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleView = () => {
+    router.push(`/?skill=${skill.id}`)
+  }
+
   return (
     <Card className="bg-card border-border hover:border-muted-foreground/30 transition-colors duration-200">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-foreground">
-          {skill.title}
-        </CardTitle>
-        <CardDescription className="font-mono text-xs text-muted-foreground">
-          {skill.name}
-        </CardDescription>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base font-semibold text-foreground">
+              {skill.title}
+            </CardTitle>
+            <CardDescription className="font-mono text-xs text-muted-foreground">
+              {skill.name}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200 hover:bg-muted"
+                >
+                  <Download size={16} className="text-muted-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="bottom" 
+                className="bg-[#1a1a1a] border border-[#333] p-0 max-w-none"
+              >
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <code className="text-sm font-mono text-[#9ca3af]">
+                    {downloadCommand}
+                  </code>
+                  <button
+                    onClick={handleCopy}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+            <button
+              onClick={handleView}
+              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200 hover:bg-muted"
+            >
+              <Eye size={16} className="text-muted-foreground" />
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
