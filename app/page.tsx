@@ -45,6 +45,18 @@ export default function Home() {
     }
   }, [addNode, addConnection, nodes])
 
+  const handleAddScript = useCallback(() => {
+    const mainNode = nodes.find((n) => n.type === "main")
+    const nonMainNodes = nodes.filter((n) => n.type !== "main")
+    const yOffset = nonMainNodes.length * 40
+    const x = (mainNode ? mainNode.x - 700 : -500) + Math.random() * 40
+    const y = (mainNode ? mainNode.y : 100) + yOffset + Math.random() * 40
+    const newNode = addNode("script", x, y)
+    if (mainNode) {
+      addConnection(newNode.id, mainNode.id)
+    }
+  }, [addNode, addConnection, nodes])
+
   const handleFormatText = useCallback(
     (format: string) => {
       if (!selectedNodeId) return
@@ -248,6 +260,7 @@ export default function Home() {
       <FloatingToolbar
         onAddReference={handleAddReference}
         onAddAsset={handleAddAsset}
+        onAddScript={handleAddScript}
         onFormatText={handleFormatText}
       />
     </div>

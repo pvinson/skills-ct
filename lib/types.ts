@@ -1,4 +1,4 @@
-export type NodeType = "main" | "reference" | "asset"
+export type NodeType = "main" | "reference" | "asset" | "script"
 
 export interface SkillNode {
   id: string
@@ -110,6 +110,12 @@ List any specific "gotchas" or limitations found in this data.
     bg: "#333333",
     badge: "asset",
     defaultTitle: "asset",
+    defaultContent: ``,
+  },
+  script: {
+    bg: "#EEEEEE",
+    badge: "script",
+    defaultTitle: "script",
     defaultContent: ``,
   },
 }

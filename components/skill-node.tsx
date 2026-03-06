@@ -49,8 +49,12 @@ export function SkillNodeComponent({
   const [scrollTop, setScrollTop] = useState(0)
 
   const config = NODE_CONFIGS[node.type]
-  const hasInput = node.type === "main" || node.type === "reference"
+  const hasInput = node.type === "main" || node.type === "reference" || node.type === "script"
   const hasOutput = node.type !== "main"
+  const isLightBg = node.type === "script"
+  const textColor = isLightBg ? "#111111" : "rgba(255,255,255,0.9)"
+  const textColorMuted = isLightBg ? "rgba(17,17,17,0.5)" : "rgba(255,255,255,0.5)"
+  const borderColor = isLightBg ? "rgba(17,17,17,0.2)" : "rgba(255,255,255,0.15)"
 
   // Get connected node titles for this node
   const connectedNodeTitles = connections
@@ -293,10 +297,12 @@ export function SkillNodeComponent({
         className="flex flex-col h-full overflow-hidden"
         style={{
           background: config.bg,
-          border: isSelected ? "1px solid #ffffff" : "1px solid rgba(255,255,255,0.6)",
+          border: isSelected 
+            ? `1px solid ${isLightBg ? "#111111" : "#ffffff"}` 
+            : `1px solid ${isLightBg ? "rgba(17,17,17,0.3)" : "rgba(255,255,255,0.6)"}`,
           borderRadius: 16,
           boxShadow: isSelected
-            ? "0 0 20px rgba(255,255,255,0.1)"
+            ? `0 0 20px ${isLightBg ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.1)"}`
             : "0 4px 16px rgba(0,0,0,0.3)",
         }}
       >
@@ -304,7 +310,7 @@ export function SkillNodeComponent({
         <div
           className={`flex items-center justify-between px-4 py-3 ${node.locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           style={{
-            borderBottom: "1px solid rgba(255,255,255,0.15)",
+            borderBottom: `1px solid ${borderColor}`,
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -312,7 +318,8 @@ export function SkillNodeComponent({
               <div className="no-drag flex items-center">
                 <input
                   ref={titleInputRef}
-                  className="bg-transparent text-foreground text-sm font-mono outline-none border-b border-foreground/40 w-32"
+                  className="bg-transparent text-sm font-mono outline-none w-32"
+                  style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
                   value={node.title}
                   onChange={(e) => onUpdate(node.id, { title: e.target.value })}
                   onBlur={() => setIsEditingTitle(false)}
@@ -320,13 +327,14 @@ export function SkillNodeComponent({
                     if (e.key === "Enter") setIsEditingTitle(false)
                   }}
                 />
-                <span className="text-sm font-mono text-muted-foreground">
+                <span className="text-sm font-mono" style={{ color: textColorMuted }}>
                   .md
                 </span>
               </div>
             ) : (
               <button
-                className="no-drag text-sm font-mono text-foreground hover:text-foreground/80 transition-colors truncate"
+                className="no-drag text-sm font-mono transition-colors truncate"
+                style={{ color: textColor }}
                 onClick={() => setIsEditingTitle(true)}
               >
                 {node.title}.md
@@ -335,7 +343,7 @@ export function SkillNodeComponent({
           </div>
           <div className="flex items-center gap-2">
             {node.locked && (
-              <Lock size={12} className="text-orange-400" />
+              <Lock size={12} style={{ color: isLightBg ? "#c2410c" : "#fb923c" }} />
             )}
             {/* Line count meter - only for main node */}
             {node.type === "main" && (() => {
@@ -389,8 +397,8 @@ export function SkillNodeComponent({
             <span
               className="text-[10px] font-mono px-2 py-0.5 rounded-full"
               style={{
-                background: "rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.7)",
+                background: isLightBg ? "rgba(17,17,17,0.1)" : "rgba(255,255,255,0.12)",
+                color: isLightBg ? "rgba(17,17,17,0.7)" : "rgba(255,255,255,0.7)",
               }}
             >
               {config.badge}
@@ -584,10 +592,11 @@ export function SkillNodeComponent({
               {/* Line numbers */}
               <div
                 ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono text-foreground/30 overflow-hidden"
+                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono overflow-hidden"
                 style={{
                   minWidth: "2.5rem",
-                  borderRight: "1px solid rgba(255,255,255,0.1)",
+                  borderRight: `1px solid ${borderColor}`,
+                  color: textColorMuted,
                 }}
               >
                 {node.content.split("\n").map((_, index) => (
@@ -625,7 +634,7 @@ export function SkillNodeComponent({
                     {renderHighlightedContent().map((part, i) => (
                       <span
                         key={i}
-                        style={{ color: part.isInvalidRef ? "#ef4444" : "rgba(255,255,255,0.9)" }}
+                        style={{ color: part.isInvalidRef ? "#ef4444" : textColor }}
                       >
                         {part.text}
                       </span>
@@ -636,7 +645,7 @@ export function SkillNodeComponent({
                   ref={textareaRef}
                   className="absolute inset-0 w-full h-full resize-none bg-transparent text-sm font-mono p-3 outline-none"
                   style={{ 
-                    caretColor: "white",
+                    caretColor: isLightBg ? "#111111" : "white",
                     lineHeight: "1.5",
                     wordWrap: "break-word",
                     overflowWrap: "break-word",
@@ -674,7 +683,7 @@ export function SkillNodeComponent({
           >
             <path
               d="M 14 20 L 20 14 M 10 20 L 20 10 M 6 20 L 20 6"
-              stroke="white"
+              stroke={isLightBg ? "#111111" : "white"}
               strokeWidth="1.5"
               fill="none"
             />
