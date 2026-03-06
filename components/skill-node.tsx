@@ -159,7 +159,7 @@ export function SkillNodeComponent({
     
     const measure = measureRef.current
     const lines = node.content.split("\n")
-    const baseLineHeight = 22.75 // 14px * 1.625 line-height
+    const baseLineHeight = 21 // 14px * 1.5 line-height
     
     const heights = lines.map((line) => {
       if (!line || line.trim() === "") {
@@ -436,7 +436,7 @@ export function SkillNodeComponent({
                   whiteSpace: "pre-wrap",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
-                  lineHeight: "1.625",
+                  lineHeight: "1.5",
                   // Match textarea width: full width minus line numbers (2.5rem + padding)
                   width: `calc(${node.width}px - 2.5rem - 24px - 2px)`,
                   padding: "0",
@@ -456,11 +456,11 @@ export function SkillNodeComponent({
                   <div 
                     key={index}
                     style={{ 
-                      height: lineHeights[index] || 22.75,
+                      height: lineHeights[index] || 21,
                       display: "flex",
                       alignItems: "flex-start",
                       paddingTop: "0px",
-                      lineHeight: "1.625",
+                      lineHeight: "1.5",
                     }}
                   >
                     {index + 1}
@@ -473,7 +473,7 @@ export function SkillNodeComponent({
                 className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
                 style={{ 
                   caretColor: "white",
-                  lineHeight: "1.625",
+                  lineHeight: "1.5",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   whiteSpace: "pre-wrap",
