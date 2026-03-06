@@ -40,26 +40,26 @@ description: This skill should be used when the user asks to "specific phrase 1"
 A brief statement of what this skill achieves (e.g., "Standardize React Component creation").
 
 ## Constraints & Guardrails
-*   **Rule 1**: Never use…
-*   **Rule 2**: Do not run…
-*   **Rule 3**: Use only …
+- **Rule 1**: Never use…
+- **Rule 2**: Do not run…
+- **Rule 3**: Use only …
 
 ## Instructions & Workflow
-1.  **Step 1 Name**: Examine the…
-2.  **Step 2 Name**: Draft a…
-3.  **Step 3 Name**: Implement…using the [Your Reference Name](references/your-reference-name.md).
+1. **Step 1 Name**: Examine the…
+2. **Step 2 Name**: Draft a…
+3. **Step 3 Name**: Implement…using the [Your Reference Name](references/your-reference-name.md).
 
 ## Examples
-*   **Example 1 Name**: [Example code or expected behavior goes here]
-*   **Example 2 Name**: [Example code or expected behavior goes here]
+- **Example 1 Name**: [Example code or expected behavior goes here]
+- **Example 2 Name**: [Example code or expected behavior goes here]
 
 ## References
-*   [Your Reference Name](references/your-reference-name.md)
-*   [Your Asset Name](assets/your-asset-name.ttf)
-*   [Your Asset Name](assets/your-asset-name.png)
-*   [Your Script Name](scripts/your-script-name.py)
-*   [Your Script Name](scripts/your-script-name.js)
-*   [Your Rule Name](rules/your-rule-name.js)
+- [Your Reference Name](references/your-reference-name.md)
+- [Your Asset Name](assets/your-asset-name.ttf)
+- [Your Asset Name](assets/your-asset-name.png)
+- [Your Script Name](scripts/your-script-name.py)
+- [Your Script Name](scripts/your-script-name.js)
+- [Your Rule Name](rules/your-rule-name.js)
 `,
   },
   reference: {
