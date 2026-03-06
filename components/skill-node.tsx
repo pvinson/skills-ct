@@ -38,6 +38,7 @@ export function SkillNodeComponent({
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 })
   const titleInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const lineNumbersRef = useRef<HTMLDivElement>(null)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -142,6 +143,13 @@ export function SkillNodeComponent({
       titleInputRef.current.select()
     }
   }, [isEditingTitle])
+
+  // Sync scroll between textarea and line numbers
+  const handleTextareaScroll = useCallback(() => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
+    }
+  }, [])
 
   return (
     <div
@@ -359,22 +367,46 @@ export function SkillNodeComponent({
               </button>
             </div>
           ) : (
-            <textarea
-              ref={textareaRef}
-              className="no-drag w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none leading-relaxed"
-              style={{ caretColor: "white" }}
-              value={node.content}
-              onChange={(e) => {
-                if (!node.locked) onUpdate(node.id, { content: e.target.value })
-              }}
-              readOnly={node.locked}
-              onClick={(e) => {
-                e.stopPropagation()
-                onSelect(node.id)
-              }}
-              spellCheck={false}
-              placeholder="Start typing..."
-            />
+            <div className="no-drag flex h-full overflow-hidden">
+              {/* Line numbers */}
+              <div
+                ref={lineNumbersRef}
+                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono text-foreground/30 overflow-hidden"
+                style={{
+                  minWidth: "2.5rem",
+                  borderRight: "1px solid rgba(255,255,255,0.1)",
+                  lineHeight: "1.625",
+                }}
+              >
+                {node.content.split("\n").map((_, index) => (
+                  <div key={index}>{index + 1}</div>
+                ))}
+              </div>
+              {/* Text content with word wrap */}
+              <textarea
+                ref={textareaRef}
+                className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
+                style={{ 
+                  caretColor: "white",
+                  lineHeight: "1.625",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                  whiteSpace: "pre-wrap",
+                }}
+                value={node.content}
+                onChange={(e) => {
+                  if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                }}
+                onScroll={handleTextareaScroll}
+                readOnly={node.locked}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelect(node.id)
+                }}
+                spellCheck={false}
+                placeholder="Start typing..."
+              />
+            </div>
           )}
         </div>
 
