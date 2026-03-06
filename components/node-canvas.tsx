@@ -128,25 +128,39 @@ export function NodeCanvas({
       const target = e.target as HTMLElement
       const isInsideNodeContent = target.closest(".node-content-area")
       
-      if (isPinchZoom) {
-        // Pinch-to-zoom always controls canvas zoom
-        e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.98 : 1.02
-        const newScale = Math.max(0.2, Math.min(3, scale * delta))
-        setScale(newScale)
-      } else if (isInsideNodeContent) {
+      if (isInsideNodeContent && !isPinchZoom) {
         // Regular scroll inside node content - let it scroll naturally
         // Don't prevent default, let the textarea handle scroll
         return
-      } else {
-        // Regular scroll outside nodes - zoom canvas
-        e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.98 : 1.02
-        const newScale = Math.max(0.2, Math.min(3, scale * delta))
-        setScale(newScale)
       }
+      
+      // Zoom toward cursor position
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? 0.98 : 1.02
+      const newScale = Math.max(0.2, Math.min(3, scale * delta))
+      
+      if (!canvasRef.current) {
+        setScale(newScale)
+        return
+      }
+      
+      // Get cursor position relative to the canvas container
+      const rect = canvasRef.current.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+      
+      // Calculate the point in canvas coordinates under the cursor
+      const canvasX = (mouseX - offset.x) / scale
+      const canvasY = (mouseY - offset.y) / scale
+      
+      // Calculate new offset to keep the point under cursor fixed
+      const newOffsetX = mouseX - canvasX * newScale
+      const newOffsetY = mouseY - canvasY * newScale
+      
+      setScale(newScale)
+      setOffset({ x: newOffsetX, y: newOffsetY })
     },
-    [scale]
+    [scale, offset]
   )
 
   // Connection start
