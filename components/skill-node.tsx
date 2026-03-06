@@ -64,7 +64,8 @@ export function SkillNodeComponent({
   // Function to check if a markdown link reference is valid (connected)
   const isValidReference = useCallback((linkText: string, linkPath: string) => {
     // Extract the filename from the path (e.g., "reference/api.md" -> "api")
-    const match = linkPath.match(/(?:reference|asset)\/(.+)\.md$/)
+    // Match reference/, asset/, assets/, scripts/ paths
+    const match = linkPath.match(/(?:reference|assets?|scripts?)\/(.+?)(?:\.[^.]+)?$/)
     if (!match) return true // Not a reference/asset link, don't mark as invalid
     const fileName = match[1]
     return connectedNodeTitles.includes(fileName)
@@ -86,7 +87,7 @@ export function SkillNodeComponent({
       }
       
       const [fullMatch, linkText, linkPath] = match
-      const isRefOrAssetLink = /^(reference|asset)\//.test(linkPath)
+      const isRefOrAssetLink = /^(reference|assets?|scripts?)\//.test(linkPath)
       const isInvalid = isRefOrAssetLink && !isValidReference(linkText, linkPath)
       
       parts.push({ text: fullMatch, isInvalidRef: isInvalid })
