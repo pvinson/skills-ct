@@ -99,10 +99,12 @@ List any specific "gotchas" or limitations found in this data.
 - **Constraint:** "Data in this file is only valid for Python 3.10+".
 - **Warning:** "Do not use these values for production environments."
 
-## Version & Maintenance
-- **Last Updated:** YYYY-MM-DD
-- **Owner:** [Team/Role]
-- **Source:** [Link to original internal doc/repo]
+## References
+- [reference-name](reference/reference.md)
+- [asset-name](assets/your-asset-name.ttf)
+- [asset-name](assets/your-asset-name.png)
+- [script-name](scripts/your-script-name.py)
+- [script-name](scripts/your-script-name.js)
 `,
   },
   asset: {
