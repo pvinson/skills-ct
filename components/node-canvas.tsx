@@ -131,7 +131,7 @@ export function NodeCanvas({
       if (isPinchZoom) {
         // Pinch-to-zoom always controls canvas zoom
         e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.95 : 1.05
+        const delta = e.deltaY > 0 ? 0.98 : 1.02
         const newScale = Math.max(0.2, Math.min(3, scale * delta))
         setScale(newScale)
       } else if (isInsideNodeContent) {
@@ -141,7 +141,7 @@ export function NodeCanvas({
       } else {
         // Regular scroll outside nodes - zoom canvas
         e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.95 : 1.05
+        const delta = e.deltaY > 0 ? 0.98 : 1.02
         const newScale = Math.max(0.2, Math.min(3, scale * delta))
         setScale(newScale)
       }
