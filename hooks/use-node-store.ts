@@ -61,10 +61,53 @@ export function useNodeStore() {
   }, [nodes])
 
   const updateNode = useCallback((id: string, updates: Partial<SkillNode>) => {
+    // If content is being updated, check for removed references
+    if (updates.content !== undefined) {
+      const currentNode = nodes.find((n) => n.id === id)
+      if (currentNode) {
+        const oldContent = currentNode.content
+        const newContent = updates.content
+        
+        // Extract references from content: [title](reference/title.md) or [title](asset/title.md) etc.
+        const extractReferences = (content: string): string[] => {
+          const refRegex = /\[([^\]]+)\]\((?:reference|assets?|scripts?)\/[^)]+\)/g
+          const refs: string[] = []
+          let match
+          while ((match = refRegex.exec(content)) !== null) {
+            refs.push(match[1]) // Extract the title from the link text
+          }
+          return refs
+        }
+        
+        const oldRefs = extractReferences(oldContent)
+        const newRefs = extractReferences(newContent)
+        
+        // Find removed references (in old but not in new)
+        const removedRefs = oldRefs.filter((ref) => !newRefs.includes(ref))
+        
+        if (removedRefs.length > 0) {
+          // Find connections to remove
+          setConnections((prev) => 
+            prev.filter((conn) => {
+              // Only filter connections TO this node (where this node is the target)
+              if (conn.toNodeId !== id) return true
+              
+              // Find the source node
+              const fromNode = nodes.find((n) => n.id === conn.fromNodeId)
+              if (!fromNode) return true
+              
+              // If the source node's title is in the removed refs, remove this connection
+              return !removedRefs.includes(fromNode.title)
+            })
+          )
+        }
+      }
+    }
+    
     setNodes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, ...updates } : n))
     )
-  }, [])
+  }, [nodes])
 
   const duplicateNode = useCallback(
     (id: string) => {
