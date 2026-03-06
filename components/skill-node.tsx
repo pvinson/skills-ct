@@ -38,9 +38,7 @@ export function SkillNodeComponent({
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 })
   const titleInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const lineNumbersRef = useRef<HTMLDivElement>(null)
-  const measureRef = useRef<HTMLDivElement>(null)
-  const [lineHeights, setLineHeights] = useState<number[]>([])
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
@@ -146,37 +144,15 @@ export function SkillNodeComponent({
     }
   }, [isEditingTitle])
 
-  // Sync scroll between textarea and line numbers
-  const handleTextareaScroll = useCallback(() => {
-    if (textareaRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
+  // Sync textarea scroll with container
+  const handleContainerScroll = useCallback(() => {
+    if (containerRef.current && textareaRef.current) {
+      textareaRef.current.scrollTop = containerRef.current.scrollTop
+      textareaRef.current.scrollLeft = containerRef.current.scrollLeft
     }
   }, [])
 
-  // Calculate line heights for soft wrapping
-  useEffect(() => {
-    if (!measureRef.current || !textareaRef.current || node.type === "asset") return
-    
-    const measure = measureRef.current
-    const textarea = textareaRef.current
-    const lines = node.content.split("\n")
-    const baseLineHeight = 22.75 // 14px * 1.625 line-height
-    
-    // Use textarea's actual content width (clientWidth minus padding)
-    const textareaContentWidth = textarea.clientWidth - 24 // 12px padding on each side
-    measure.style.width = `${textareaContentWidth}px`
-    
-    const heights = lines.map((line) => {
-      if (!line || line.trim() === "") {
-        return baseLineHeight
-      }
-      measure.textContent = line || " "
-      const height = measure.offsetHeight
-      return height || baseLineHeight
-    })
-    
-    setLineHeights(heights)
-  }, [node.content, node.width, node.type])
+
 
   return (
     <div
@@ -428,75 +404,69 @@ export function SkillNodeComponent({
               </button>
             </div>
           ) : (
-            <div className="no-drag node-content-area flex h-full overflow-hidden relative">
-              {/* Hidden measurement div for calculating wrapped line heights */}
+            <div className="no-drag node-content-area h-full overflow-hidden relative">
+              {/* Scrollable container with line rows */}
               <div
-                ref={measureRef}
-                className="absolute text-sm font-mono p-0"
+                ref={containerRef}
+                className="h-full overflow-auto pt-3 pb-3"
+                onScroll={handleContainerScroll}
                 style={{
-                  visibility: "hidden",
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  lineHeight: "22.75px",
-                  padding: "0",
-                }}
-                aria-hidden="true"
-              />
-              {/* Line numbers - scrolls in sync with textarea */}
-              <div
-                ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30 overflow-y-auto scrollbar-hide"
-                style={{
-                  minWidth: "2.5rem",
-                  borderRight: "1px solid rgba(255,255,255,0.1)",
-                  paddingTop: "12px",
-                  paddingBottom: "12px",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
+                  scrollbarWidth: "thin",
                 }}
               >
-                {node.content.split("\n").map((_, index) => (
-                  <div 
-                    key={index}
-                    style={{ 
-                      height: lineHeights[index] || 22.75,
-                      display: "flex",
-                      alignItems: "flex-start",
-                      paddingTop: "0px",
-                      lineHeight: "22.75px",
-                    }}
-                  >
-                    {index + 1}
+                {node.content.split("\n").map((line, index) => (
+                  <div key={index} className="flex">
+                    {/* Line number */}
+                    <div
+                      className="flex-shrink-0 select-none text-right pr-3 text-sm font-mono text-foreground/30"
+                      style={{
+                        minWidth: "2.5rem",
+                        borderRight: "1px solid rgba(255,255,255,0.1)",
+                        lineHeight: "22.75px",
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+                    {/* Line content */}
+                    <div
+                      className="flex-1 min-w-0 pl-3 pr-3 text-sm font-mono text-foreground/90 whitespace-pre-wrap break-words"
+                      style={{
+                        lineHeight: "22.75px",
+                        minHeight: "22.75px",
+                      }}
+                    >
+                      {line || "\u00A0"}
+                    </div>
                   </div>
                 ))}
               </div>
-              {/* Text content with word wrap */}
+              {/* Invisible textarea for input - positioned over entire area */}
               <textarea
                 ref={textareaRef}
-                className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
+                className="absolute inset-0 w-full h-full resize-none bg-transparent text-transparent text-sm font-mono outline-none caret-white"
                 style={{ 
-                  caretColor: "white",
                   lineHeight: "22.75px",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  whiteSpace: "pre-wrap",
+                  caretColor: "white",
+                  paddingTop: "12px",
+                  paddingBottom: "12px",
+                  paddingLeft: "calc(2.5rem + 12px + 1px + 12px)", // minWidth + pr-3 + border + pl-3
+                  paddingRight: "12px",
                 }}
                 value={node.content}
                 onChange={(e) => {
                   if (!node.locked) onUpdate(node.id, { content: e.target.value })
                 }}
-                onScroll={handleTextareaScroll}
+                onScroll={(e) => {
+                  if (containerRef.current) {
+                    containerRef.current.scrollTop = e.currentTarget.scrollTop
+                  }
+                }}
                 readOnly={node.locked}
                 onClick={(e) => {
                   e.stopPropagation()
                   onSelect(node.id)
                 }}
                 spellCheck={false}
-                placeholder="Start typing..."
               />
             </div>
           )}
