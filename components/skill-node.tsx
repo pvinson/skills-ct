@@ -65,10 +65,11 @@ export function SkillNodeComponent({
   const isValidReference = useCallback((linkText: string, linkPath: string) => {
     // Extract the filename from the path (e.g., "reference/api.md" -> "api")
     // Match reference/, asset/, assets/, scripts/ paths
-    const match = linkPath.match(/(?:reference|assets?|scripts?)\/(.+?)(?:\.[^.]+)?$/)
+    const match = linkPath.match(/(?:reference|assets?|scripts?)\/(.+?)\.md$/)
     if (!match) return true // Not a reference/asset link, don't mark as invalid
     const fileName = match[1]
-    return connectedNodeTitles.includes(fileName)
+    // Check if any connected node title matches the filename (case-insensitive comparison)
+    return connectedNodeTitles.some((title) => title.toLowerCase() === fileName.toLowerCase())
   }, [connectedNodeTitles])
 
   // Function to render content with invalid references highlighted in red
