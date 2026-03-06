@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import type { SkillNode as SkillNodeType } from "@/lib/types"
+import type { SkillNode as SkillNodeType, Connection } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
-import { MoreVertical, Copy, Type, Lock, Unlock, Trash2, Upload } from "lucide-react"
+import { MoreVertical, Copy, Type, Lock, Unlock, Trash2, Upload, Link } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 interface SkillNodeProps {
   node: SkillNodeType
@@ -15,6 +16,8 @@ interface SkillNodeProps {
   onConnectionStart: (nodeId: string, e: React.MouseEvent) => void
   canvasOffset: { x: number; y: number }
   canvasScale: number
+  connections: Connection[]
+  allNodes: SkillNodeType[]
 }
 
 export function SkillNodeComponent({
@@ -27,8 +30,12 @@ export function SkillNodeComponent({
   onConnectionStart,
   canvasOffset,
   canvasScale,
+  connections,
+  allNodes,
 }: SkillNodeProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingExtension, setIsEditingExtension] = useState(false)
+  const extensionInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -41,10 +48,68 @@ export function SkillNodeComponent({
   const lineNumbersRef = useRef<HTMLDivElement>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const [lineHeights, setLineHeights] = useState<number[]>([])
+  const [scrollTop, setScrollTop] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
   const hasOutput = node.type !== "main"
+  const isLightBg = node.type === "script"
+  const textColor = isLightBg ? "#111111" : "rgba(255,255,255,0.9)"
+  const textColorMuted = isLightBg ? "rgba(17,17,17,0.5)" : "rgba(255,255,255,0.5)"
+  const borderColor = isLightBg ? "rgba(17,17,17,0.2)" : "rgba(255,255,255,0.15)"
+
+  // Get connected node titles for this node
+  const connectedNodeTitles = connections
+    .filter((c) => c.toNodeId === node.id)
+    .map((c) => {
+      const fromNode = allNodes.find((n) => n.id === c.fromNodeId)
+      return fromNode?.title
+    })
+    .filter(Boolean) as string[]
+
+  // Function to check if a markdown link reference is valid (connected)
+  const isValidReference = useCallback((linkText: string, linkPath: string) => {
+    // Extract the filename from the path (e.g., "reference/api.md" -> "api")
+    // Match reference/, asset/, assets/, scripts/ paths
+    const match = linkPath.match(/(?:reference|assets?|scripts?)\/(.+?)\.md$/)
+    if (!match) return true // Not a reference/asset link, don't mark as invalid
+    const fileName = match[1]
+    // Check if any connected node title matches the filename (case-insensitive comparison)
+    return connectedNodeTitles.some((title) => title.toLowerCase() === fileName.toLowerCase())
+  }, [connectedNodeTitles])
+
+  // Function to render content with invalid references highlighted in red
+  const renderHighlightedContent = useCallback(() => {
+    const content = node.content
+    // Match markdown links: [text](path)
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+    const parts: { text: string; isInvalidRef: boolean }[] = []
+    let lastIndex = 0
+    let match
+
+    while ((match = linkRegex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push({ text: content.slice(lastIndex, match.index), isInvalidRef: false })
+      }
+      
+      const [fullMatch, linkText, linkPath] = match
+      const isRefOrAssetLink = /^(reference|assets?|scripts?)\//.test(linkPath)
+      const isInvalid = isRefOrAssetLink && !isValidReference(linkText, linkPath)
+      
+      parts.push({ text: fullMatch, isInvalidRef: isInvalid })
+      lastIndex = match.index + fullMatch.length
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push({ text: content.slice(lastIndex), isInvalidRef: false })
+    }
+
+    return parts
+  }, [node.content, isValidReference])
 
   // Node dragging
   const handleMouseDown = useCallback(
@@ -146,12 +211,83 @@ export function SkillNodeComponent({
     }
   }, [isEditingTitle])
 
-  // Sync scroll between textarea and line numbers
+  useEffect(() => {
+    if (isEditingExtension && extensionInputRef.current) {
+      extensionInputRef.current.focus()
+      extensionInputRef.current.select()
+    }
+  }, [isEditingExtension])
+
+  // Sync scroll between textarea, line numbers, and highlight overlay
   const handleTextareaScroll = useCallback(() => {
     if (textareaRef.current && lineNumbersRef.current) {
       lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop
+      setScrollTop(textareaRef.current.scrollTop)
     }
   }, [])
+
+  // Handle file selection for asset nodes
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      onUpdate(node.id, {
+        assetFile: {
+          name: file.name,
+          type: file.type,
+          dataUrl: dataUrl,
+        },
+        // Update title and extension based on file name
+        title: file.name.split('.').slice(0, -1).join('.') || file.name,
+        extension: file.name.split('.').pop() || '',
+      })
+    }
+    reader.readAsDataURL(file)
+  }, [node.id, onUpdate])
+
+  // Handle drag-and-drop for asset nodes
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (node.type === "asset") {
+      setIsDragOver(true)
+    }
+  }, [node.type])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    if (node.type !== "asset") return
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      onUpdate(node.id, {
+        assetFile: {
+          name: file.name,
+          type: file.type,
+          dataUrl: dataUrl,
+        },
+        title: file.name.split('.').slice(0, -1).join('.') || file.name,
+        extension: file.name.split('.').pop() || '',
+      })
+    }
+    reader.readAsDataURL(file)
+  }, [node.id, node.type, onUpdate])
 
   // Calculate line heights for soft wrapping
   useEffect(() => {
@@ -235,10 +371,12 @@ export function SkillNodeComponent({
         className="flex flex-col h-full overflow-hidden"
         style={{
           background: config.bg,
-          border: isSelected ? "1px solid #ffffff" : "1px solid rgba(255,255,255,0.6)",
+          border: isSelected 
+            ? `1px solid ${isLightBg ? "#111111" : "#ffffff"}` 
+            : `1px solid ${isLightBg ? "rgba(17,17,17,0.3)" : "rgba(255,255,255,0.6)"}`,
           borderRadius: 16,
           boxShadow: isSelected
-            ? "0 0 20px rgba(255,255,255,0.1)"
+            ? `0 0 20px ${isLightBg ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.1)"}`
             : "0 4px 16px rgba(0,0,0,0.3)",
         }}
       >
@@ -246,15 +384,63 @@ export function SkillNodeComponent({
         <div
           className={`flex items-center justify-between px-4 py-3 ${node.locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           style={{
-            borderBottom: "1px solid rgba(255,255,255,0.15)",
+            borderBottom: `1px solid ${borderColor}`,
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            {isEditingTitle ? (
+            {(node.type === "script" || node.type === "asset") ? (
+              // Script and Asset nodes: both title and extension are editable
+              <div className="no-drag flex items-center">
+                {isEditingTitle ? (
+                  <input
+                    ref={titleInputRef}
+                    className="bg-transparent text-sm font-mono outline-none w-32"
+                    style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
+                    value={node.title}
+                    onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+                    onBlur={() => setIsEditingTitle(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") setIsEditingTitle(false)
+                    }}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-mono transition-colors truncate"
+                    style={{ color: textColor }}
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    {node.title}
+                  </button>
+                )}
+                <span className="text-sm font-mono" style={{ color: textColorMuted }}>.</span>
+                {isEditingExtension ? (
+                  <input
+                    ref={extensionInputRef}
+                    className="bg-transparent text-sm font-mono outline-none w-16"
+                    style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
+                    value={node.extension}
+                    onChange={(e) => onUpdate(node.id, { extension: e.target.value })}
+                    onBlur={() => setIsEditingExtension(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") setIsEditingExtension(false)
+                    }}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-mono transition-colors truncate"
+                    style={{ color: textColor }}
+                    onClick={() => setIsEditingExtension(true)}
+                  >
+                    {node.extension}
+                  </button>
+                )}
+              </div>
+            ) : isEditingTitle ? (
               <div className="no-drag flex items-center">
                 <input
                   ref={titleInputRef}
-                  className="bg-transparent text-foreground text-sm font-mono outline-none border-b border-foreground/40 w-32"
+                  className="bg-transparent text-sm font-mono outline-none w-32"
+                  style={{ color: textColor, borderBottom: `1px solid ${borderColor}` }}
                   value={node.title}
                   onChange={(e) => onUpdate(node.id, { title: e.target.value })}
                   onBlur={() => setIsEditingTitle(false)}
@@ -262,22 +448,23 @@ export function SkillNodeComponent({
                     if (e.key === "Enter") setIsEditingTitle(false)
                   }}
                 />
-                <span className="text-sm font-mono text-muted-foreground">
-                  .md
+                <span className="text-sm font-mono" style={{ color: textColorMuted }}>
+                  .{node.extension}
                 </span>
               </div>
             ) : (
               <button
-                className="no-drag text-sm font-mono text-foreground hover:text-foreground/80 transition-colors truncate"
+                className="no-drag text-sm font-mono transition-colors truncate"
+                style={{ color: textColor }}
                 onClick={() => setIsEditingTitle(true)}
               >
-                {node.title}.md
+                {node.title}.{node.extension}
               </button>
             )}
           </div>
           <div className="flex items-center gap-2">
             {node.locked && (
-              <Lock size={12} className="text-orange-400" />
+              <Lock size={12} style={{ color: isLightBg ? "#c2410c" : "#fb923c" }} />
             )}
             {/* Line count meter - only for main node */}
             {node.type === "main" && (() => {
@@ -289,11 +476,26 @@ export function SkillNodeComponent({
                 if (lineCount <= 350) return "#f97316" // orange
                 return "#ef4444" // red
               }
+              const meterColor = getMeterColor()
               return (
                 <div 
                   className="flex items-center gap-1.5"
                   title={`${lineCount} / 500 lines`}
                 >
+                  {lineCount >= 500 && (
+                    <span
+                      className="text-xs font-mono"
+                      style={{ color: "#ef4444" }}
+                    >
+                      recommended max lines
+                    </span>
+                  )}
+                  <span
+                    className="text-xs font-mono"
+                    style={{ color: meterColor }}
+                  >
+                    {lineCount}
+                  </span>
                   <div
                     className="relative overflow-hidden rounded-full"
                     style={{
@@ -306,7 +508,7 @@ export function SkillNodeComponent({
                       className="absolute left-0 top-0 h-full rounded-full transition-all duration-200"
                       style={{
                         width: `${percentage}%`,
-                        background: getMeterColor(),
+                        background: meterColor,
                       }}
                     />
                   </div>
@@ -316,13 +518,13 @@ export function SkillNodeComponent({
             <span
               className="text-[10px] font-mono px-2 py-0.5 rounded-full"
               style={{
-                background: "rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.7)",
+                background: isLightBg ? "rgba(17,17,17,0.1)" : "rgba(255,255,255,0.12)",
+                color: isLightBg ? "rgba(17,17,17,0.7)" : "rgba(255,255,255,0.7)",
               }}
             >
               {config.badge}
             </span>
-            {node.type !== "main" && (
+            {node.type === "main" && (
               <div className="no-drag relative" ref={menuRef}>
                 <button
                   className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
@@ -348,17 +550,6 @@ export function SkillNodeComponent({
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
                       onClick={(e) => {
                         e.stopPropagation()
-                        onDuplicate(node.id)
-                        setShowMenu(false)
-                      }}
-                    >
-                      <Copy size={13} />
-                      Duplicate
-                    </button>
-                    <button
-                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation()
                         setShowMenu(false)
                         setIsEditingTitle(true)
                       }}
@@ -366,6 +557,82 @@ export function SkillNodeComponent({
                       <Type size={13} />
                       Rename
                     </button>
+                    <button
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onUpdate(node.id, { locked: !node.locked })
+                        setShowMenu(false)
+                      }}
+                    >
+                      {node.locked ? <Unlock size={13} /> : <Lock size={13} />}
+                      {node.locked ? "Unlock" : "Lock"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {node.type !== "main" && (
+              <div className="no-drag relative" ref={menuRef}>
+                <button
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu((prev) => !prev)
+                  }}
+                >
+                  <MoreVertical size={14} />
+                </button>
+                {showMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-1 w-40 rounded-lg overflow-hidden z-40"
+                    style={{
+                      background: "rgba(30,30,30,0.97)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      backdropFilter: "blur(12px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+<button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDuplicate(node.id)
+                                        setShowMenu(false)
+                                      }}
+                                    >
+                                      <Copy size={13} />
+                                      Duplicate
+                                    </button>
+                                    <button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const subdirectory = node.type === "reference" ? "reference" : "asset"
+                                        const link = `[${node.title}](${subdirectory}/${node.title}.md)`
+                                        navigator.clipboard.writeText(link)
+                                        toast({
+                                          description: "Node link copied",
+                                          duration: 6000,
+                                        })
+                                        setShowMenu(false)
+                                      }}
+                                    >
+                                      <Link size={13} />
+                                      Copy link
+                                    </button>
+                                    <button
+                                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setShowMenu(false)
+                                        setIsEditingTitle(true)
+                                      }}
+                                    >
+                                      <Type size={13} />
+                                      Rename
+                                    </button>
                     <button
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-mono text-foreground/80 hover:bg-white/10 hover:text-foreground transition-colors"
                       onClick={(e) => {
@@ -399,28 +666,87 @@ export function SkillNodeComponent({
         {/* Content */}
         <div className="flex-1 overflow-hidden p-1">
           {node.type === "asset" ? (
-            <div className="no-drag flex items-center justify-center w-full h-full">
-              <button
-                className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px dashed rgba(255,255,255,0.25)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.06)"
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                <Upload size={24} className="text-foreground/50" />
-                <span className="text-xs font-mono text-foreground/50">Upload</span>
-              </button>
+            <div 
+              className="no-drag flex flex-col w-full h-full p-3 transition-all duration-200"
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              style={{
+                background: isDragOver ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                border: isDragOver ? "2px dashed rgba(59, 130, 246, 0.5)" : "2px dashed transparent",
+                borderRadius: "8px",
+              }}
+            >
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              
+              {node.assetFile ? (
+                /* Full-size thumbnail preview when file is uploaded */
+                <div className="flex-1 flex items-center justify-center w-full h-full overflow-hidden">
+                  <div 
+                    className="relative w-full h-full rounded-lg overflow-hidden flex items-center justify-center"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                    }}
+                  >
+                    {node.assetFile.type.startsWith('image/') ? (
+                      <img
+                        src={node.assetFile.dataUrl}
+                        alt={node.assetFile.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <div className="text-center">
+                          <div className="text-3xl font-mono text-foreground/70 uppercase">
+                            {node.extension}
+                          </div>
+                          <div className="text-xs font-mono text-foreground/40 truncate max-w-full px-4 mt-2">
+                            {node.assetFile.name}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Upload button when no file is uploaded */
+                <div className="flex-1 flex items-center justify-center">
+                  <button
+                    className="flex flex-col items-center gap-3 px-8 py-6 rounded-xl transition-all duration-200"
+                    style={{
+                      background: isDragOver ? "rgba(59, 130, 246, 0.15)" : "rgba(255,255,255,0.06)",
+                      border: isDragOver ? "1px dashed rgba(59, 130, 246, 0.6)" : "1px dashed rgba(255,255,255,0.25)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isDragOver) {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.1)"
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isDragOver) {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.06)"
+                        e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
+                      }
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      fileInputRef.current?.click()
+                    }}
+                  >
+                    <Upload size={24} className={isDragOver ? "text-blue-400" : "text-foreground/50"} />
+                    <span className={`text-xs font-mono text-center ${isDragOver ? "text-blue-400" : "text-foreground/50"}`}>Upload<br />or<br />Drag & Drop</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="no-drag node-content-area flex h-full overflow-hidden relative">
@@ -446,10 +772,11 @@ export function SkillNodeComponent({
               {/* Line numbers */}
               <div
                 ref={lineNumbersRef}
-                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono text-foreground/30 overflow-hidden"
+                className="flex-shrink-0 select-none text-right pr-3 pt-3 pb-3 text-xs font-mono overflow-hidden"
                 style={{
                   minWidth: "2.5rem",
-                  borderRight: "1px solid rgba(255,255,255,0.1)",
+                  borderRight: `1px solid ${borderColor}`,
+                  color: textColorMuted,
                 }}
               >
                 {node.content.split("\n").map((_, index) => (
@@ -468,29 +795,57 @@ export function SkillNodeComponent({
                 ))}
               </div>
               {/* Text content with word wrap */}
-              <textarea
-                ref={textareaRef}
-                className="flex-1 w-full h-full resize-none bg-transparent text-foreground/90 text-sm font-mono p-3 outline-none"
-                style={{ 
-                  caretColor: "white",
-                  lineHeight: "1.5",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  whiteSpace: "pre-wrap",
-                }}
-                value={node.content}
-                onChange={(e) => {
-                  if (!node.locked) onUpdate(node.id, { content: e.target.value })
-                }}
-                onScroll={handleTextareaScroll}
-                readOnly={node.locked}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelect(node.id)
-                }}
-                spellCheck={false}
-                placeholder="Start typing..."
-              />
+              <div className="relative flex-1 w-full h-full">
+                {/* Highlight overlay for invalid references */}
+                <div
+                  className="absolute inset-0 text-sm font-mono p-3 pointer-events-none overflow-hidden"
+                  style={{ 
+                    lineHeight: "1.5",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: `translateY(-${scrollTop}px)`,
+                    }}
+                  >
+                    {renderHighlightedContent().map((part, i) => (
+                      <span
+                        key={i}
+                        style={{ color: part.isInvalidRef ? "#ef4444" : textColor }}
+                      >
+                        {part.text}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  className="absolute inset-0 w-full h-full resize-none bg-transparent text-sm font-mono p-3 outline-none"
+                  style={{ 
+                    caretColor: isLightBg ? "#111111" : "white",
+                    lineHeight: "1.5",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    whiteSpace: "pre-wrap",
+                    color: "transparent",
+                  }}
+                  value={node.content}
+                  onChange={(e) => {
+                    if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                  }}
+                  onScroll={handleTextareaScroll}
+                  readOnly={node.locked}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelect(node.id)
+                  }}
+                  spellCheck={false}
+                  placeholder="Start typing..."
+                />
+              </div>
             </div>
           )}
         </div>
@@ -508,7 +863,7 @@ export function SkillNodeComponent({
           >
             <path
               d="M 14 20 L 20 14 M 10 20 L 20 10 M 6 20 L 20 6"
-              stroke="white"
+              stroke={isLightBg ? "#111111" : "white"}
               strokeWidth="1.5"
               fill="none"
             />

@@ -1,4 +1,4 @@
-export type NodeType = "main" | "reference" | "asset"
+export type NodeType = "main" | "reference" | "asset" | "script"
 
 export interface SkillNode {
   id: string
@@ -8,8 +8,15 @@ export interface SkillNode {
   width: number
   height: number
   title: string
+  extension: string
   content: string
   locked: boolean
+  // Asset-specific properties
+  assetFile?: {
+    name: string
+    type: string
+    dataUrl: string
+  }
 }
 
 export interface Connection {
@@ -24,49 +31,50 @@ export const NODE_CONFIGS: Record<
     bg: string
     badge: string
     defaultTitle: string
+    defaultExtension: string
     defaultContent: string
   }
 > = {
   main: {
-    bg: "#404040",
+    bg: "#111111",
     badge: "main",
     defaultTitle: "skill",
+    defaultExtension: "md",
     defaultContent: `---
 name: your-skill-name
 description: This skill should be used when the user asks to "specific phrase 1" or "specific phrase 2".
-version: 1.0.0
 ---
 
 # Skill Goal
 A brief statement of what this skill achieves (e.g., "Standardize React Component creation").
 
 ## Constraints & Guardrails
-*   **Rule 1**: Never use…
-*   **Rule 2**: Do not run…
-*   **Rule 3**: Use only …
+- **Rule 1**: Never use…
+- **Rule 2**: Do not run…
+- **Rule 3**: Use only …
 
 ## Instructions & Workflow
-1.  **Step 1 Name**: Examine the…
-2.  **Step 2 Name**: Draft a…
-3.  **Step 3 Name**: Implement…using the [Your Reference Name](references/your-reference-name.md).
+1. **Step 1 Name**: Examine the…
+2. **Step 2 Name**: Draft a…
+3. **Step 3 Name**: Implement…using the [Reference Name](reference/reference-name.md).
 
 ## Examples
-*   **Example 1 Name**: [Example code or expected behavior goes here]
-*   **Example 2 Name**: [Example code or expected behavior goes here]
+- **Example 1 Name**: [Example code or expected behavior goes here]
+- **Example 2 Name**: [Example code or expected behavior goes here]
 
 ## References
-*   [Your Reference Name](references/your-reference-name.md)
-*   [Your Asset Name](assets/your-asset-name.ttf)
-*   [Your Asset Name](assets/your-asset-name.png)
-*   [Your Script Name](scripts/your-script-name.py)
-*   [Your Script Name](scripts/your-script-name.js)
-*   [Your Rule Name](rules/your-rule-name.js)
+- [Reference Name](reference/reference-name.md)
+- [Asset Name](assets/asset-name.ttf)
+- [Asset Name](assets/asset-name.png)
+- [Script Name](scripts/script-name.py)
+- [Script Name](scripts/script-name.js)
 `,
   },
   reference: {
-    bg: "#808080",
+    bg: "#222222",
     badge: "reference",
     defaultTitle: "reference",
+    defaultExtension: "md",
     defaultContent: `# [Resource Name] Reference
 
 > **Context:** Brief 1-sentence description of what this data is (e.g., "Standard API error codes and resolution steps for the Billing Skill").
@@ -100,16 +108,26 @@ List any specific "gotchas" or limitations found in this data.
 - **Constraint:** "Data in this file is only valid for Python 3.10+".
 - **Warning:** "Do not use these values for production environments."
 
-## Version & Maintenance
-- **Last Updated:** YYYY-MM-DD
-- **Owner:** [Team/Role]
-- **Source:** [Link to original internal doc/repo]
+## References
+- [Reference Name](reference/reference-name.md)
+- [Asset Name](assets/asset-name.ttf)
+- [Asset Name](assets/asset-name.png)
+- [Script Name](scripts/script-name.py)
+- [Script Name](scripts/script-name.js)
 `,
   },
   asset: {
-    bg: "#606060",
+    bg: "#333333",
     badge: "asset",
     defaultTitle: "asset",
+    defaultExtension: "png",
+    defaultContent: ``,
+  },
+  script: {
+    bg: "#EEEEEE",
+    badge: "script",
+    defaultTitle: "script",
+    defaultExtension: "txt",
     defaultContent: ``,
   },
 }

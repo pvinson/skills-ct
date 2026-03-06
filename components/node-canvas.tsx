@@ -45,6 +45,7 @@ export function NodeCanvas({
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
   const [connectingMouse, setConnectingMouse] = useState({ x: 0, y: 0 })
   const [snapTarget, setSnapTarget] = useState<string | null>(null)
+  const [invalidSnap, setInvalidSnap] = useState<{ x: number; y: number } | null>(null)
 
   // Connection delete hover state: track which connection endpoint is hovered
   const [hoveredConnEndpoint, setHoveredConnEndpoint] = useState<{
@@ -55,10 +56,12 @@ export function NodeCanvas({
 
   // Find closest input connector within SNAP_DISTANCE (in screen pixels)
   const findSnapTarget = useCallback(
-    (mouseX: number, mouseY: number, sourceId: string): { nodeId: string; pos: { x: number; y: number } } | null => {
+    (mouseX: number, mouseY: number, sourceId: string): { nodeId: string; pos: { x: number; y: number }; isInvalid: boolean } | null => {
       if (!canvasRef.current) return null
       const rect = canvasRef.current.getBoundingClientRect()
-      let closest: { nodeId: string; pos: { x: number; y: number }; dist: number } | null = null
+      let closest: { nodeId: string; pos: { x: number; y: number }; dist: number; isInvalid: boolean } | null = null
+
+      const sourceNode = nodes.find((n) => n.id === sourceId)
 
       for (const n of nodes) {
         if (n.id === sourceId) continue
@@ -69,10 +72,12 @@ export function NodeCanvas({
         const screenY = inputPos.y * scale + offset.y + rect.top
         const dist = Math.hypot(mouseX - screenX, mouseY - screenY)
         if (dist <= SNAP_DISTANCE && (!closest || dist < closest.dist)) {
-          closest = { nodeId: n.id, pos: inputPos, dist }
+          // Check if this is an invalid connection (reference to reference)
+          const isInvalid = sourceNode?.type === "reference" && n.type === "reference"
+          closest = { nodeId: n.id, pos: inputPos, dist, isInvalid }
         }
       }
-      return closest ? { nodeId: closest.nodeId, pos: closest.pos } : null
+      return closest ? { nodeId: closest.nodeId, pos: closest.pos, isInvalid: closest.isInvalid } : null
     },
     [nodes, scale, offset]
   )
@@ -128,25 +133,39 @@ export function NodeCanvas({
       const target = e.target as HTMLElement
       const isInsideNodeContent = target.closest(".node-content-area")
       
-      if (isPinchZoom) {
-        // Pinch-to-zoom always controls canvas zoom
-        e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.95 : 1.05
-        const newScale = Math.max(0.2, Math.min(3, scale * delta))
-        setScale(newScale)
-      } else if (isInsideNodeContent) {
+      if (isInsideNodeContent && !isPinchZoom) {
         // Regular scroll inside node content - let it scroll naturally
         // Don't prevent default, let the textarea handle scroll
         return
-      } else {
-        // Regular scroll outside nodes - zoom canvas
-        e.preventDefault()
-        const delta = e.deltaY > 0 ? 0.95 : 1.05
-        const newScale = Math.max(0.2, Math.min(3, scale * delta))
-        setScale(newScale)
       }
+      
+      // Zoom toward cursor position
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? 0.98 : 1.02
+      const newScale = Math.max(0.2, Math.min(3, scale * delta))
+      
+      if (!canvasRef.current) {
+        setScale(newScale)
+        return
+      }
+      
+      // Get cursor position relative to the canvas container
+      const rect = canvasRef.current.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+      
+      // Calculate the point in canvas coordinates under the cursor
+      const canvasX = (mouseX - offset.x) / scale
+      const canvasY = (mouseY - offset.y) / scale
+      
+      // Calculate new offset to keep the point under cursor fixed
+      const newOffsetX = mouseX - canvasX * newScale
+      const newOffsetY = mouseY - canvasY * newScale
+      
+      setScale(newScale)
+      setOffset({ x: newOffsetX, y: newOffsetY })
     },
-    [scale]
+    [scale, offset]
   )
 
   // Connection start
@@ -164,28 +183,45 @@ export function NodeCanvas({
     const handleMove = (e: MouseEvent) => {
       setConnectingMouse({ x: e.clientX, y: e.clientY })
       const snap = findSnapTarget(e.clientX, e.clientY, connectingFrom)
-      setSnapTarget(snap ? snap.nodeId : null)
+      if (snap) {
+        if (snap.isInvalid) {
+          setSnapTarget(null)
+          setInvalidSnap(snap.pos)
+        } else {
+          setSnapTarget(snap.nodeId)
+          setInvalidSnap(null)
+        }
+      } else {
+        setSnapTarget(null)
+        setInvalidSnap(null)
+      }
     }
     const handleUp = (e: MouseEvent) => {
       // First check snap target
       const snap = findSnapTarget(e.clientX, e.clientY, connectingFrom)
-      if (snap && snap.nodeId !== connectingFrom) {
+      if (snap && snap.nodeId !== connectingFrom && !snap.isInvalid) {
         onAddConnection(connectingFrom, snap.nodeId)
-      } else {
-        // Fallback to element-based detection
+      } else if (!snap || !snap.isInvalid) {
+        // Fallback to element-based detection (only if not an invalid snap)
         const target = document.elementFromPoint(e.clientX, e.clientY)
         if (target) {
           const inputConnector = target.closest("[data-connector='input']")
           if (inputConnector) {
             const targetNodeId = inputConnector.getAttribute("data-node-id")
             if (targetNodeId && targetNodeId !== connectingFrom) {
-              onAddConnection(connectingFrom, targetNodeId)
+              // Check if this would be an invalid connection
+              const sourceNode = nodes.find((n) => n.id === connectingFrom)
+              const targetNode = nodes.find((n) => n.id === targetNodeId)
+              if (!(sourceNode?.type === "reference" && targetNode?.type === "reference")) {
+                onAddConnection(connectingFrom, targetNodeId)
+              }
             }
           }
         }
       }
       setConnectingFrom(null)
       setSnapTarget(null)
+      setInvalidSnap(null)
     }
     window.addEventListener("mousemove", handleMove)
     window.addEventListener("mouseup", handleUp)
@@ -193,7 +229,7 @@ export function NodeCanvas({
       window.removeEventListener("mousemove", handleMove)
       window.removeEventListener("mouseup", handleUp)
     }
-  }, [connectingFrom, onAddConnection, findSnapTarget])
+  }, [connectingFrom, onAddConnection, findSnapTarget, nodes])
 
   // Track mouse proximity to connection endpoints for delete button
   const handleTransformMouseMove = useCallback(
@@ -360,6 +396,7 @@ export function NodeCanvas({
                   <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
                 </circle>
               )}
+              
             </>
           )}
 
@@ -404,6 +441,41 @@ export function NodeCanvas({
           )}
         </svg>
 
+        {/* Invalid connection indicator - highest z-index within transform layer */}
+        {invalidSnap && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: invalidSnap.x,
+              top: invalidSnap.y,
+              transform: "translate(-50%, -50%)",
+              zIndex: 9999,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="12" fill="#ef4444" />
+              <line
+                x1="7"
+                y1="7"
+                x2="17"
+                y2="17"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="17"
+                y1="7"
+                x2="7"
+                y2="17"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
+
         {/* Nodes */}
         {nodes.map((node) => (
           <SkillNodeComponent
@@ -417,6 +489,8 @@ export function NodeCanvas({
             onConnectionStart={handleConnectionStart}
             canvasOffset={offset}
             canvasScale={scale}
+            connections={connections}
+            allNodes={nodes}
           />
         ))}
       </div>

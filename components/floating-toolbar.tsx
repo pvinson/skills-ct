@@ -3,6 +3,7 @@
 import {
   BookOpen,
   Package,
+  FileCode,
   Heading1,
   Heading2,
   Heading3,
@@ -32,12 +33,14 @@ interface ToolbarSection {
 interface FloatingToolbarProps {
   onAddReference: () => void
   onAddAsset: () => void
+  onAddScript: () => void
   onFormatText: (format: string) => void
 }
 
 export function FloatingToolbar({
   onAddReference,
   onAddAsset,
+  onAddScript,
   onFormatText,
 }: FloatingToolbarProps) {
   const sections: ToolbarSection[] = [
@@ -48,13 +51,16 @@ export function FloatingToolbar({
           icon: <BookOpen size={18} />,
           label: "Reference",
           action: onAddReference,
-          color: "#808080",
         },
         {
           icon: <Package size={18} />,
           label: "Assets",
           action: onAddAsset,
-          color: "#606060",
+        },
+        {
+          icon: <FileCode size={18} />,
+          label: "Script",
+          action: onAddScript,
         },
       ],
     },

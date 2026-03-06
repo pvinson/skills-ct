@@ -1,12 +1,37 @@
 "use client"
 
-import { useCallback } from "react"
-import { Save, XCircle } from "lucide-react"
+import { useCallback, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Home() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [copied, setCopied] = useState(false)
+  
+  // For demo purposes, using a placeholder skill name
+  const skillSlug = "current-skill"
+  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  
   const {
     nodes,
     connections,
@@ -40,6 +65,18 @@ export default function Home() {
     const x = (mainNode ? mainNode.x - 700 : -500) + Math.random() * 40
     const y = (mainNode ? mainNode.y : 100) + yOffset + Math.random() * 40
     const newNode = addNode("asset", x, y)
+    if (mainNode) {
+      addConnection(newNode.id, mainNode.id)
+    }
+  }, [addNode, addConnection, nodes])
+
+  const handleAddScript = useCallback(() => {
+    const mainNode = nodes.find((n) => n.type === "main")
+    const nonMainNodes = nodes.filter((n) => n.type !== "main")
+    const yOffset = nonMainNodes.length * 40
+    const x = (mainNode ? mainNode.x - 700 : -500) + Math.random() * 40
+    const y = (mainNode ? mainNode.y : 100) + yOffset + Math.random() * 40
+    const newNode = addNode("script", x, y)
     if (mainNode) {
       addConnection(newNode.id, mainNode.id)
     }
@@ -184,19 +221,31 @@ export default function Home() {
     URL.revokeObjectURL(url)
   }, [nodes])
 
-  const handleCancel = useCallback(() => {
-    if (window.confirm("Are you sure you want to reset? All changes will be lost.")) {
-      window.location.reload()
-    }
+  const handleCancelClick = useCallback(() => {
+    setShowCancelDialog(true)
   }, [])
+
+  const handleConfirmCancel = useCallback(() => {
+    setShowCancelDialog(false)
+    router.push("/home")
+  }, [router])
+
+  const handleCopyDownloadLink = useCallback(async () => {
+    await navigator.clipboard.writeText(downloadCommand)
+    setCopied(true)
+    toast({ description: "Link copied to clipboard" })
+    setTimeout(() => setCopied(false), 2000)
+  }, [downloadCommand, toast])
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background relative">
       {/* Header */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans">
-          skills.ct
-        </h1>
+        <Link href="/home">
+          <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
+            skills.ct
+          </h1>
+        </Link>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
@@ -214,7 +263,7 @@ export default function Home() {
             </span>
           </button>
           <button
-            onClick={handleCancel}
+            onClick={handleCancelClick}
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             style={{ width: "fit-content" }}
           >
@@ -228,6 +277,41 @@ export default function Home() {
               Cancel
             </span>
           </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleCopyDownloadLink}
+                className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+                style={{ width: "fit-content" }}
+              >
+                <div
+                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                  style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+                >
+                  <Download size={16} />
+                </div>
+                <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
+                  Download
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="bottom" 
+              className="bg-[#1a1a1a] border border-[#333] p-0 max-w-none"
+            >
+              <div className="flex items-center gap-3 px-4 py-3">
+                <code className="text-sm font-mono text-[#9ca3af]">
+                  {downloadCommand}
+                </code>
+                <button
+                  onClick={handleCopyDownloadLink}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -248,8 +332,49 @@ export default function Home() {
       <FloatingToolbar
         onAddReference={handleAddReference}
         onAddAsset={handleAddAsset}
+        onAddScript={handleAddScript}
         onFormatText={handleFormatText}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div
+                className="flex items-center justify-center h-10 w-10 rounded-lg"
+                style={{ background: "rgba(239,68,68,0.19)" }}
+              >
+                <AlertTriangle size={20} style={{ color: "#ef4444" }} />
+              </div>
+              <DialogTitle>Cancel this skill?</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              Are you sure you want to cancel? A canceled project is not recoverable and all your progress will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <button
+              onClick={() => setShowCancelDialog(false)}
+              className="group flex items-center justify-center gap-2 h-10 px-4 rounded-lg transition-all duration-200 border border-border hover:bg-muted"
+            >
+              <span className="text-sm font-medium text-foreground">
+                Continue this skill
+              </span>
+            </button>
+            <button
+              onClick={handleConfirmCancel}
+              className="group flex items-center justify-center gap-2 h-10 px-4 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(239,68,68,0.19)", color: "#ef4444" }}
+            >
+              <XCircle size={16} />
+              <span className="text-sm font-medium">
+                Cancel this skill
+              </span>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
