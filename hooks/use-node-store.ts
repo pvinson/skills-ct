@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback } from "react"
 import type { SkillNode, Connection, NodeType } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
+
+let nodeCounter = 0
 
 function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   const config = NODE_CONFIGS[type]
@@ -26,11 +28,11 @@ function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   return `${baseTitle}-${counter}`
 }
 
-function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNode[], counter: { current: number }): SkillNode {
-  counter.current++
+function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNode[]): SkillNode {
+  nodeCounter++
   const config = NODE_CONFIGS[type]
   return {
-    id: `node-${counter.current}`,
+    id: `node-${nodeCounter}`,
     type,
     x,
     y,
@@ -44,9 +46,8 @@ function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNo
 }
 
 export function useNodeStore() {
-  const nodeCounter = useRef(0)
   const [nodes, setNodes] = useState<SkillNode[]>(() => {
-    const mainNode = createNode("main", 200, 100, [], nodeCounter)
+    const mainNode = createNode("main", 200, 100, [])
     return [mainNode]
   })
   const [connections, setConnections] = useState<Connection[]>([])
@@ -55,7 +56,7 @@ export function useNodeStore() {
   const addNode = useCallback((type: NodeType, x?: number, y?: number): SkillNode => {
     const posX = x ?? 250 + Math.random() * 200
     const posY = y ?? 100 + Math.random() * 200
-    const node = createNode(type, posX, posY, nodes, nodeCounter)
+    const node = createNode(type, posX, posY, nodes)
     setNodes((prev) => [...prev, node])
     return node
   }, [nodes])
@@ -113,10 +114,10 @@ export function useNodeStore() {
     (id: string) => {
       const source = nodes.find((n) => n.id === id)
       if (!source) return
-      nodeCounter.current++
+      nodeCounter++
       const dup: SkillNode = {
         ...source,
-        id: `node-${nodeCounter.current}`,
+        id: `node-${nodeCounter}`,
         x: source.x + 40,
         y: source.y + 40,
         title: `${source.title}-copy`,

@@ -129,9 +129,7 @@ function truncateDescription(description: string, maxLength: number = 120): stri
 }
 
 function formatDate(dateString: string): string {
-  // Parse YYYY-MM-DD parts directly to avoid UTC-to-local timezone shifting
-  const [year, month, day] = dateString.split("-").map(Number)
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+  return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -155,7 +153,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   const handleView = () => {
-    router.push(`/canvas?skill=${skill.id}`)
+    router.push(`/?skill=${skill.id}`)
   }
 
   return (
@@ -265,13 +263,13 @@ export default function HomePage() {
       {/* Header */}
       <div className="w-full px-4 py-4">
         <div className="flex items-center gap-4">
-          <Link href="/home">
+          <Link href="/">
             <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
               skills.ct
             </h1>
           </Link>
           <Link
-            href="/canvas"
+            href="/"
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
           >
             <div
