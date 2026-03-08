@@ -155,7 +155,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   const handleView = () => {
-    router.push(`/?skill=${skill.id}`)
+    router.push(`/canvas?skill=${skill.id}`)
   }
 
   return (
@@ -265,13 +265,13 @@ export default function HomePage() {
       {/* Header */}
       <div className="w-full px-4 py-4">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/home">
             <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
               skills.ct
             </h1>
           </Link>
           <Link
-            href="/"
+            href="/canvas"
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
           >
             <div
