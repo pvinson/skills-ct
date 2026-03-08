@@ -287,6 +287,13 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
+        {/* Intro */}
+        <div className="text-center max-w-2xl mx-auto flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Visually explore how Skill.md files, reference docs, assets, and scripts fit together with a node-based interface that helps you create, edit, and iterate in a best practice framework, then publish skills that your team can plug into their own agents.
+          </p>
+        </div>
+
         {/* Search */}
         <div className="relative w-full max-w-xl mx-auto">
           <Search
