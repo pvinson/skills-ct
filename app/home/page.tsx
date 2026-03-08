@@ -129,7 +129,9 @@ function truncateDescription(description: string, maxLength: number = 120): stri
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
+  // Parse YYYY-MM-DD parts directly to avoid UTC-to-local timezone shifting
+  const [year, month, day] = dateString.split("-").map(Number)
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
