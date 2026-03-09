@@ -130,71 +130,95 @@ export default function Home() {
 
       if (hasSelection) {
         // TEXT IS SELECTED: Apply formatting to the selected text
-        switch (format) {
-          case "h1":
-            replacement = `# ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "h2":
-            replacement = `## ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "h3":
-            replacement = `### ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "bold":
-            replacement = `**${selectedText}**`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "italic":
-            replacement = `_${selectedText}_`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "code":
-            replacement = `\`${selectedText}\``
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "ul":
-            replacement = `- ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "ol":
-            replacement = `1. ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "blockquote":
-            replacement = `> ${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "hr":
-            replacement = `\n---\n${selectedText}`
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          case "link":
-            replacement = `[${selectedText}](url)`
-            // Position cursor at "url" for easy replacement
-            newCursorStart = start + selectedText.length + 3
-            newCursorEnd = start + selectedText.length + 6
-            break
-          case "body":
-            replacement = selectedText
-            newCursorStart = start
-            newCursorEnd = start + replacement.length
-            break
-          default:
-            replacement = selectedText
-            newCursorEnd = start + replacement.length
+        // For line-based formats, apply to each line individually
+        const lines = selectedText.split("\n")
+        const isMultiLine = lines.length > 1
+        
+        // Line-based formats that should be applied to each line
+        const lineBasedFormats = ["h1", "h2", "h3", "ul", "ol", "blockquote"]
+        
+        if (isMultiLine && lineBasedFormats.includes(format)) {
+          // Apply format to each line
+          const formatPrefixes: Record<string, string> = {
+            h1: "# ",
+            h2: "## ",
+            h3: "### ",
+            ul: "- ",
+            ol: "1. ",
+            blockquote: "> ",
+          }
+          const prefix = formatPrefixes[format]
+          replacement = lines.map((line) => `${prefix}${line}`).join("\n")
+          newCursorStart = start
+          newCursorEnd = start + replacement.length
+        } else {
+          // Single line or non-line-based format
+          switch (format) {
+            case "h1":
+              replacement = `# ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "h2":
+              replacement = `## ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "h3":
+              replacement = `### ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "bold":
+              replacement = `**${selectedText}**`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "italic":
+              replacement = `_${selectedText}_`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "code":
+              replacement = `\`${selectedText}\``
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "ul":
+              replacement = `- ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "ol":
+              replacement = `1. ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "blockquote":
+              replacement = `> ${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "hr":
+              replacement = `\n---\n${selectedText}`
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            case "link":
+              replacement = `[${selectedText}](url)`
+              // Position cursor at "url" for easy replacement
+              newCursorStart = start + selectedText.length + 3
+              newCursorEnd = start + selectedText.length + 6
+              break
+            case "body":
+              replacement = selectedText
+              newCursorStart = start
+              newCursorEnd = start + replacement.length
+              break
+            default:
+              replacement = selectedText
+              newCursorEnd = start + replacement.length
+          }
         }
 
         const newContent =
