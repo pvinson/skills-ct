@@ -88,11 +88,6 @@ export default function Home() {
       const node = nodes.find((n) => n.id === selectedNodeId)
       if (!node) return
 
-      // Get the active textarea
-      const textarea = document.querySelector(
-        `textarea`
-      ) as HTMLTextAreaElement | null
-
       // Find the specific textarea within the selected node
       const allTextareas = document.querySelectorAll("textarea")
       let activeTextarea: HTMLTextAreaElement | null = null
@@ -103,7 +98,7 @@ export default function Home() {
       })
 
       if (!activeTextarea) {
-        // If no textarea focused, apply to the selected node's content
+        // If no textarea focused, apply to the selected node's content (append new line)
         let newContent = node.content
         const formatMap: Record<string, string> = {
           h1: "\n# ",
@@ -126,77 +121,125 @@ export default function Home() {
 
       const start = activeTextarea.selectionStart
       const end = activeTextarea.selectionEnd
+      const hasSelection = start !== end
       const selectedText = activeTextarea.value.substring(start, end)
       let replacement = ""
       let cursorOffset = 0
+      let newCursorStart = start
+      let newCursorEnd = start
 
-      switch (format) {
-        case "h1":
-          replacement = selectedText ? `# ${selectedText}` : "# "
-          cursorOffset = replacement.length
-          break
-        case "h2":
-          replacement = selectedText ? `## ${selectedText}` : "## "
-          cursorOffset = replacement.length
-          break
-        case "h3":
-          replacement = selectedText ? `### ${selectedText}` : "### "
-          cursorOffset = replacement.length
-          break
-        case "bold":
-          replacement = selectedText ? `**${selectedText}**` : "**text**"
-          cursorOffset = selectedText ? replacement.length : start + 2
-          break
-        case "italic":
-          replacement = selectedText ? `_${selectedText}_` : "_text_"
-          cursorOffset = selectedText ? replacement.length : start + 1
-          break
-        case "code":
-          replacement = selectedText ? `\`${selectedText}\`` : "`code`"
-          cursorOffset = selectedText ? replacement.length : start + 1
-          break
-        case "ul":
-          replacement = selectedText ? `- ${selectedText}` : "- "
-          cursorOffset = replacement.length
-          break
-        case "ol":
-          replacement = selectedText ? `1. ${selectedText}` : "1. "
-          cursorOffset = replacement.length
-          break
-        case "blockquote":
-          replacement = selectedText ? `> ${selectedText}` : "> "
-          cursorOffset = replacement.length
-          break
-        case "hr":
-          replacement = "\n---\n"
-          cursorOffset = replacement.length
-          break
-        case "link":
-          replacement = selectedText
-            ? `[${selectedText}](url)`
-            : "[text](url)"
-          cursorOffset = replacement.length
-          break
-        case "body":
-          replacement = selectedText || ""
-          cursorOffset = replacement.length
-          break
-        default:
-          replacement = selectedText
+      if (hasSelection) {
+        // TEXT IS SELECTED: Apply formatting to the selected text
+        switch (format) {
+          case "h1":
+            replacement = `# ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "h2":
+            replacement = `## ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "h3":
+            replacement = `### ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "bold":
+            replacement = `**${selectedText}**`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "italic":
+            replacement = `_${selectedText}_`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "code":
+            replacement = `\`${selectedText}\``
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "ul":
+            replacement = `- ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "ol":
+            replacement = `1. ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "blockquote":
+            replacement = `> ${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "hr":
+            replacement = `\n---\n${selectedText}`
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          case "link":
+            replacement = `[${selectedText}](url)`
+            // Position cursor at "url" for easy replacement
+            newCursorStart = start + selectedText.length + 3
+            newCursorEnd = start + selectedText.length + 6
+            break
+          case "body":
+            replacement = selectedText
+            newCursorStart = start
+            newCursorEnd = start + replacement.length
+            break
+          default:
+            replacement = selectedText
+            newCursorEnd = start + replacement.length
+        }
+
+        const newContent =
+          activeTextarea.value.substring(0, start) +
+          replacement +
+          activeTextarea.value.substring(end)
+        updateNode(selectedNodeId, { content: newContent })
+
+        // Restore cursor/selection position
+        requestAnimationFrame(() => {
+          activeTextarea!.focus()
+          activeTextarea!.setSelectionRange(newCursorStart, newCursorEnd)
+        })
+      } else {
+        // NO TEXT SELECTED: Add a new line with the markdown element (current behavior)
+        const formatMap: Record<string, string> = {
+          h1: "\n# ",
+          h2: "\n## ",
+          h3: "\n### ",
+          bold: "**text**",
+          italic: "_text_",
+          code: "`code`",
+          ul: "\n- ",
+          ol: "\n1. ",
+          blockquote: "\n> ",
+          hr: "\n---\n",
+          link: "[text](url)",
+          body: "\n",
+        }
+        replacement = formatMap[format] || ""
+        
+        // Insert at cursor position
+        const newContent =
+          activeTextarea.value.substring(0, start) +
+          replacement +
+          activeTextarea.value.substring(end)
+        updateNode(selectedNodeId, { content: newContent })
+
+        // Position cursor appropriately
+        requestAnimationFrame(() => {
+          activeTextarea!.focus()
+          const pos = start + replacement.length
+          activeTextarea!.setSelectionRange(pos, pos)
+        })
       }
-
-      const newContent =
-        activeTextarea.value.substring(0, start) +
-        replacement +
-        activeTextarea.value.substring(end)
-      updateNode(selectedNodeId, { content: newContent })
-
-      // Restore cursor position
-      requestAnimationFrame(() => {
-        activeTextarea!.focus()
-        const pos = start + cursorOffset
-        activeTextarea!.setSelectionRange(pos, pos)
-      })
     },
     [selectedNodeId, nodes, updateNode]
   )
