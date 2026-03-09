@@ -290,7 +290,7 @@ export default function HomePage() {
         {/* Intro */}
         <div className="text-center max-w-2xl mx-auto">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Explore creating and editing agent skills in a visual node-based interface, then publish them here for the team to use.
+            Explore creating and editing agent skills in a visual node-based interface that helps you adhere to best practices, then publish them for others to use.
           </p>
         </div>
 
