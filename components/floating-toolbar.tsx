@@ -151,6 +151,11 @@ export function FloatingToolbar({
 function ToolbarButtonItem({ button }: { button: ToolbarButton }) {
   return (
     <button
+      onMouseDown={(e) => {
+        // Prevent the button from stealing focus from the textarea
+        // This preserves the text selection when clicking format buttons
+        e.preventDefault()
+      }}
       onClick={button.action}
       className="group flex items-center gap-0 h-9 rounded-lg transition-all duration-200 hover:gap-2"
       style={{ width: "fit-content" }}

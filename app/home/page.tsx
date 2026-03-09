@@ -293,7 +293,7 @@ export default function HomePage() {
             Agents load specific skills &ldquo;just in time&rdquo; when a task is detected, rather than keeping all instructions in active memory.
           </p>
           <p className="text-base font-semibold text-white leading-relaxed">
-            Explore creating and editing agent skills in a visual node-based interface that helps you adhere to best practices, then publish them for others to use.
+            Explore creating and editing agent skills in a node-based interface that helps you adhere to best practices, then publish them for others to use.
           </p>
         </div>
 
