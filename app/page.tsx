@@ -87,6 +87,8 @@ export default function Home() {
       if (!selectedNodeId) return
       const node = nodes.find((n) => n.id === selectedNodeId)
       if (!node) return
+      // Don't allow formatting on readme nodes
+      if (node.type === "readme") return
 
       // Find the specific textarea within the selected node
       const allTextareas = document.querySelectorAll("textarea")
