@@ -289,10 +289,10 @@ export default function HomePage() {
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Intro */}
         <div className="text-center max-w-xl mx-auto flex flex-col gap-2">
-          <p className="text-base font-semibold text-muted-foreground leading-relaxed">
+          <p className="text-base font-semibold text-white leading-relaxed">
             Agents load specific skills &ldquo;just in time&rdquo; when a task is detected, rather than keeping all instructions in active memory.
           </p>
-          <p className="text-base font-semibold text-muted-foreground leading-relaxed">
+          <p className="text-base font-semibold text-white leading-relaxed">
             Explore creating and editing agent skills in a visual node-based interface that helps you adhere to best practices, then publish them for others to use.
           </p>
         </div>
