@@ -40,6 +40,45 @@ export function NodeCanvas({
   const [scale, setScale] = useState(1)
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
+  const hasInitializedView = useRef(false)
+
+  // Set initial view on mount to center skill.md in the middle third
+  useEffect(() => {
+    if (hasInitializedView.current || !canvasRef.current) return
+    hasInitializedView.current = true
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const viewportWidth = rect.width
+    const viewportHeight = rect.height
+
+    // Find the main node (skill.md) to center it
+    const mainNode = nodes.find((n) => n.type === "main")
+    if (!mainNode) return
+
+    // Calculate scale to fit both nodes comfortably
+    // Main node at x=400, readme at x=1100, both width=600
+    // Total canvas width needed: 1100 + 600 = 1700
+    // We want main node (center at x=700) to be in the center third of the viewport
+    // Center third starts at viewportWidth/3 and ends at viewportWidth*2/3
+    // We want the center of main node (x + width/2) = 700 to be at viewportWidth/2
+    
+    const initialScale = 0.85
+    
+    // Calculate offset to position main node center at the center of the viewport
+    const mainNodeCenterX = mainNode.x + mainNode.width / 2
+    const mainNodeCenterY = mainNode.y + mainNode.height / 2
+    
+    // Position so main node is in the center third, leaving left third empty
+    // and readme visible in the right third
+    const targetScreenX = viewportWidth / 2
+    const targetScreenY = viewportHeight / 2
+    
+    const initialOffsetX = targetScreenX - mainNodeCenterX * initialScale
+    const initialOffsetY = targetScreenY - mainNodeCenterY * initialScale
+
+    setScale(initialScale)
+    setOffset({ x: initialOffsetX, y: initialOffsetY })
+  }, [nodes])
 
   // Connection dragging
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)

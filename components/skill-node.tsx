@@ -54,8 +54,9 @@ export function SkillNodeComponent({
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
-  const hasOutput = node.type !== "main"
+  const hasOutput = node.type !== "main" && node.type !== "readme"
   const isLightBg = node.type === "script"
+  const isReadme = node.type === "readme"
   const textColor = isLightBg ? "#111111" : "rgba(255,255,255,0.9)"
   const textColorMuted = isLightBg ? "rgba(17,17,17,0.5)" : "rgba(255,255,255,0.5)"
   const borderColor = isLightBg ? "rgba(17,17,17,0.2)" : "rgba(255,255,255,0.15)"
@@ -116,11 +117,12 @@ export function SkillNodeComponent({
     (e: React.MouseEvent) => {
       if (
         node.locked ||
+        isReadme ||
         (e.target as HTMLElement).closest(".no-drag") ||
         (e.target as HTMLElement).tagName === "TEXTAREA" ||
         (e.target as HTMLElement).tagName === "INPUT"
       ) {
-        if (node.locked) onSelect(node.id)
+        if (node.locked || isReadme) onSelect(node.id)
         return
       }
       e.preventDefault()
@@ -134,7 +136,7 @@ export function SkillNodeComponent({
         nodeY: node.y,
       }
     },
-    [node.id, node.x, node.y, onSelect]
+    [node.id, node.x, node.y, node.locked, isReadme, onSelect]
   )
 
   useEffect(() => {
@@ -159,7 +161,7 @@ export function SkillNodeComponent({
   // Resize
   const handleResizeDown = useCallback(
     (e: React.MouseEvent) => {
-      if (node.locked) return
+      if (node.locked || isReadme) return
       e.preventDefault()
       e.stopPropagation()
       setIsResizing(true)
@@ -170,7 +172,7 @@ export function SkillNodeComponent({
         h: node.height,
       }
     },
-    [node.width, node.height]
+    [node.width, node.height, node.locked, isReadme]
   )
 
   useEffect(() => {
@@ -382,7 +384,7 @@ export function SkillNodeComponent({
       >
         {/* Header */}
         <div
-          className={`flex items-center justify-between px-4 py-3 ${node.locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
+          className={`flex items-center justify-between px-4 py-3 ${node.locked || isReadme ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           style={{
             borderBottom: `1px solid ${borderColor}`,
           }}
@@ -453,13 +455,22 @@ export function SkillNodeComponent({
                 </span>
               </div>
             ) : (
-              <button
-                className="no-drag text-sm font-mono transition-colors truncate"
-                style={{ color: textColor }}
-                onClick={() => setIsEditingTitle(true)}
-              >
-                {node.title}.{node.extension}
-              </button>
+              isReadme ? (
+                <span
+                  className="no-drag text-sm font-mono truncate"
+                  style={{ color: textColor }}
+                >
+                  {node.title}.{node.extension}
+                </span>
+              ) : (
+                <button
+                  className="no-drag text-sm font-mono transition-colors truncate"
+                  style={{ color: textColor }}
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  {node.title}.{node.extension}
+                </button>
+              )
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -522,10 +533,10 @@ export function SkillNodeComponent({
                 color: isLightBg ? "rgba(17,17,17,0.7)" : "rgba(255,255,255,0.7)",
               }}
             >
-              {config.badge}
-            </span>
-            {node.type === "main" && (
-              <div className="no-drag relative" ref={menuRef}>
+{config.badge}
+  </span>
+> {node.type === "main" && !isReadme && (
+  <div className="no-drag relative" ref={menuRef}>
                 <button
                   className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
                   onClick={(e) => {
@@ -570,11 +581,11 @@ export function SkillNodeComponent({
                     </button>
                   </div>
                 )}
-              </div>
-            )}
-            {node.type !== "main" && (
-              <div className="no-drag relative" ref={menuRef}>
-                <button
+  </div>
+  )}
+> {node.type !== "main" && !isReadme && (
+  <div className="no-drag relative" ref={menuRef}>
+  <button
                   className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
                   onClick={(e) => {
                     e.stopPropagation()
@@ -834,10 +845,10 @@ export function SkillNodeComponent({
                   }}
                   value={node.content}
                   onChange={(e) => {
-                    if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                    if (!node.locked && !isReadme) onUpdate(node.id, { content: e.target.value })
                   }}
                   onScroll={handleTextareaScroll}
-                  readOnly={node.locked}
+                  readOnly={node.locked || isReadme}
                   onClick={(e) => {
                     e.stopPropagation()
                     onSelect(node.id)
@@ -850,25 +861,27 @@ export function SkillNodeComponent({
           )}
         </div>
 
-        {/* Resize handle */}
-        <div
-          className="no-drag absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize"
-          style={{ borderRadius: "0 0 16px 0" }}
-          onMouseDown={handleResizeDown}
-        >
-          <svg
-            viewBox="0 0 20 20"
-            className="w-full h-full"
-            style={{ opacity: 0.3 }}
+        {/* Resize handle - hidden for readme nodes */}
+        {!isReadme && (
+          <div
+            className="no-drag absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize"
+            style={{ borderRadius: "0 0 16px 0" }}
+            onMouseDown={handleResizeDown}
           >
-            <path
-              d="M 14 20 L 20 14 M 10 20 L 20 10 M 6 20 L 20 6"
-              stroke={isLightBg ? "#111111" : "white"}
-              strokeWidth="1.5"
-              fill="none"
-            />
-          </svg>
-        </div>
+            <svg
+              viewBox="0 0 20 20"
+              className="w-full h-full"
+              style={{ opacity: 0.3 }}
+            >
+              <path
+                d="M 14 20 L 20 14 M 10 20 L 20 10 M 6 20 L 20 6"
+                stroke={isLightBg ? "#111111" : "white"}
+                strokeWidth="1.5"
+                fill="none"
+              />
+            </svg>
+          </div>
+        )}
 
         {/* Remove confirmation dialog */}
         {showRemoveConfirm && (
