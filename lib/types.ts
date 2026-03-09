@@ -1,4 +1,4 @@
-export type NodeType = "main" | "reference" | "asset" | "script" | "readme"
+export type NodeType = "main" | "reference" | "asset" | "script"
 
 export interface SkillNode {
   id: string
@@ -129,68 +129,5 @@ List any specific "gotchas" or limitations found in this data.
     defaultTitle: "script",
     defaultExtension: "txt",
     defaultContent: ``,
-  },
-  readme: {
-    bg: "#1a1a2e",
-    badge: "readme",
-    defaultTitle: "readme",
-    defaultExtension: "md",
-    defaultContent: `general guidelines
-
-* Be narrowly scoped and goal-oriented: Each skill should target a specific type of task (e.g., "Generating PDFs in Python" or "Writing secure Express.js APIs") with a clear purpose and expected outputs.
-
-* Lead with constraints and pitfalls: Start with what must or must not happen (security risks, performance traps, environment limits, forbidden libraries, style rules) so the agent avoids common failures.
-
-* Use concrete, minimal examples: Include small, copy-safe snippets that demonstrate typical usage patterns, file layouts, and calling conventions instead of abstract advice.
-
-* Describe the runtime environment explicitly: Document language versions, available tools/libraries, network and filesystem constraints, and any pre-existing directory structure.
-
-* Standardize structure and formatting: Use a consistent, predictable layout (e.g., intro, do/don't list, step-by-step patterns, examples, testing tips, edge cases) and simple, skimmable markdown.
-
-* Optimize for machine parsing: Prefer clear headings, bullet lists, and stable terminology over prose; avoid ambiguity and contradictory guidance.
-
-* Include validation and testing guidance: Specify how the agent should verify correctness (test commands, linters, sample inputs/outputs, acceptance criteria).
-
-* Keep it stable and versioned: Version skill files, note breaking changes, and avoid frequent redefinition of the same concepts; deprecate older patterns clearly rather than silently replacing them.
-
-skill.md guidelines
-* SKILL.md files must begin with YAML frontmatter, which is loaded by default into the SKILLmd node, which must include both a name and a description: 
----
-name: your-skill-name
-description: This skill should be used when the user asks to "specific phrase 1" or "specific phrase 2".
----
-
-* Try to keep the main SKILL.md to 500 words or less, ideally as short as possible, since it will be permanently loaded into context; this keeps core guidance always available without wasting tokens.
-* Treat SKILL.md as a high-signal summary of rules and patterns, not a tutorial: focus on must / must-not rules, key constraints, and 1-2 canonical patterns.
-* Put extended explanations, edge cases, and large examples into separate REFERENCE.md files that the agent can open on demand.
-* Use tight, skimmable sections with consistent headings, for example:
-    * # Skill Goal (1-2 sentences max)
-    * # When to Use (short bullets)
-    * # Constraints (critical Must Not rules only,)
-    * # Instructions (step-by-step workflow)
-    * # Examples (such as what inputs or outputs should look like)
-    * # References (list the REFERENCE.md files and what they cover).
-* Prefer bullets and numbered steps over long paragraphs; each bullet should capture one actionable rule or pattern.
-* Keep line lengths reasonable (roughly 100-120 characters) and use consistent terminology across all associated files so agents can learn and scan the structure quickly.
-
-reference.md guidelines
-* Use REFERENCE.md files for deeper, optional detail: long examples, extended edge cases, language-specific variants, or troubleshooting guides.
-* Avoid nested reference chains: do not create REFERENCE-A.md that tells the agent to open REFERENCE-B.md, which then points to REFERENCE-C.md. Each reference file should be self-contained or point back only to SKILL.md.
-* If you need multiple references, fan out from SKILL.md (e.g., REFERENCE-python.md, REFERENCE-js.md, REFERENCE-examples.md) rather than creating multi-hop hierarchies.
-* When cross-linking is unavoidable, keep it shallow and explicit (at most one additional hop) and clearly explain why another file is needed.
-
-asset file guidelines
-* Keep assets minimal and generic: Only include files that are broadly reusable (e.g., base templates, common config stubs, small example datasets), not project-specific artifacts.
-* Use clear, stable naming, and reference these paths explicitly in SKILL.md so agents know where to look.
-* Avoid large or binary assets unless essential; they increase token and storage costs and are harder for agents to reason about. Prefer small, text-based assets.
-* Make assets idempotent and safe to reuse: Design templates and fixtures so they can be used multiple times without side effects (e.g., use placeholder values, avoid hard-coded paths).
-
-script file guidelines
-* Prefer small, single-purpose scripts over large, multipurpose ones (e.g., generate_report.py, validate_output.sh), each with a clear, documented interface.
-* Document invocation clearly in SKILL.md or a short script header comment: required args, optional flags, environment assumptions, and example commands.
-* Fail loudly and predictably: Use clear exit codes and error messages so agents can detect and react to failures programmatically.
-* Avoid hidden side effects: Scripts should not silently modify unrelated files, change global config, or require manual interaction; keep them non-interactive and deterministic.
-* Keep dependencies explicit and minimal: Note any required tools or libraries; avoid pulling in heavy stacks when a simpler approach works, and align with the documented runtime environment.
-`,
   },
 }
