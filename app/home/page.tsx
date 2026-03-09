@@ -155,7 +155,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   return (
-    <Card className="bg-card border-border hover:border-muted-foreground/30 transition-colors duration-200 flex flex-col h-full">
+    <Card className="bg-card border-border hover:border-muted-foreground/30 hover:bg-[#222222] transition-colors duration-200 flex flex-col h-full" style={{ transitionTimingFunction: "ease" }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
