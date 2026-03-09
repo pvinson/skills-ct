@@ -288,7 +288,7 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Intro */}
-        <div className="text-center max-w-2xl mx-auto flex flex-col gap-2">
+        <div className="text-center max-w-xl mx-auto flex flex-col gap-2">
           <p className="text-sm text-muted-foreground leading-relaxed">
             Explore creating and editing agent skills in a visual node-based interface that helps you adhere to best practices, then publish them for others to use.
           </p>
