@@ -278,6 +278,10 @@ export default function Home() {
       content: node.content,
     }))
 
+    // Get the skill.md node's title for the filename
+    const mainNode = nodes.find((node) => node.type === "main")
+    const skillName = mainNode?.title || "skill-files"
+
     // Download as JSON bundle
     const blob = new Blob([JSON.stringify(files, null, 2)], {
       type: "application/json",
@@ -285,7 +289,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "skill-files.json"
+    a.download = `${skillName}.json`
     a.click()
     URL.revokeObjectURL(url)
   }, [nodes])
