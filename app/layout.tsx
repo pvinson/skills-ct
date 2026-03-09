@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Roboto_Slab } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _robotoSlab = Roboto_Slab({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'skills.ct - Node-Based Skill Builder',

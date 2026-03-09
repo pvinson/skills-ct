@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check } from "lucide-react"
+import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, FolderInput } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -129,11 +129,9 @@ function truncateDescription(description: string, maxLength: number = 120): stri
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
+  const [year, month, day] = dateString.split("-").map(Number)
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  return `${months[month - 1]} ${day}, ${year}`
 }
 
 function SkillCard({ skill }: { skill: Skill }) {
@@ -153,7 +151,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   const handleView = () => {
-    router.push(`/?skill=${skill.id}`)
+    router.push(`/editor?skill=${skill.id}`)
   }
 
   return (
@@ -228,8 +226,29 @@ function SkillCard({ skill }: { skill: Skill }) {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      sessionStorage.setItem("importedSkillContent", content)
+      sessionStorage.setItem("importedSkillFileName", file.name)
+      router.push("/editor")
+    }
+    reader.readAsText(file)
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = ""
+  }
 
   const filteredSkills = useMemo(() => {
     let skills = SAMPLE_SKILLS
@@ -263,38 +282,58 @@ export default function HomePage() {
       {/* Header */}
       <div className="w-full px-4 py-4">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/home">
             <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
               skills.ct
             </h1>
           </Link>
-          <Link
-            href="/"
-            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
-          >
-            <div
-              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
-              style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+          <div className="flex items-center gap-1">
+            <Link
+              href="/editor"
+              className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             >
-              <Plus size={16} />
-            </div>
-            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
-              New Skill
-            </span>
-          </Link>
+              <div
+                className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+              >
+                <Plus size={16} />
+              </div>
+              <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
+                New Skill
+              </span>
+            </Link>
+            <button
+              onClick={handleImportClick}
+              className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            >
+              <div
+                className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
+              >
+                <FolderInput size={16} />
+              </div>
+              <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
+                Import Skill
+              </span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.txt"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Intro */}
-        <div className="text-center max-w-xl mx-auto flex flex-col gap-2">
-          <p className="text-base font-semibold text-white leading-relaxed">
-            Agents load specific skills &ldquo;just in time&rdquo; when a task is detected, rather than keeping all instructions in active memory.
-          </p>
-          <p className="text-base font-semibold text-white leading-relaxed">
-            Explore creating and editing agent skills in a node-based interface that helps you adhere to best practices, then publish them for others to use.
-          </p>
+        <div className="text-center w-full flex flex-col gap-2 mb-4">
+          <h1 className="text-2xl font-light text-muted-foreground leading-relaxed text-balance font-mono">
+            Create and share agent skills in a node-based interface that helps you adhere to best practices.
+          </h1>
         </div>
 
         {/* Search */}
