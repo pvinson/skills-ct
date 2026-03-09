@@ -153,7 +153,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   const handleView = () => {
-    router.push(`/canvas?skill=${skill.id}`)
+    router.push(`/?skill=${skill.id}`)
   }
 
   return (
@@ -263,13 +263,13 @@ export default function HomePage() {
       {/* Header */}
       <div className="w-full px-4 py-4">
         <div className="flex items-center gap-4">
-          <Link href="/home">
+          <Link href="/">
             <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
               skills.ct
             </h1>
           </Link>
           <Link
-            href="/canvas"
+            href="/"
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
           >
             <div
@@ -287,6 +287,16 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
+        {/* Intro */}
+        <div className="text-center max-w-xl mx-auto flex flex-col gap-2">
+          <p className="text-base font-semibold text-white leading-relaxed">
+            Agents load specific skills &ldquo;just in time&rdquo; when a task is detected, rather than keeping all instructions in active memory.
+          </p>
+          <p className="text-base font-semibold text-white leading-relaxed">
+            Explore creating and editing agent skills in a visual node-based interface that helps you adhere to best practices, then publish them for others to use.
+          </p>
+        </div>
+
         {/* Search */}
         <div className="relative w-full max-w-xl mx-auto">
           <Search
