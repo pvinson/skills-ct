@@ -129,11 +129,9 @@ function truncateDescription(description: string, maxLength: number = 120): stri
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
+  const [year, month, day] = dateString.split("-").map(Number)
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  return `${months[month - 1]} ${day}, ${year}`
 }
 
 function SkillCard({ skill }: { skill: Skill }) {
