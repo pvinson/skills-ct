@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
@@ -44,6 +44,24 @@ export default function Home() {
     addConnection,
     removeConnection,
   } = useNodeStore()
+
+  // Apply imported skill content to the main node on first load
+  useEffect(() => {
+    const importedContent = sessionStorage.getItem("importedSkillContent")
+    const importedFileName = sessionStorage.getItem("importedSkillFileName")
+    if (importedContent) {
+      const mainNode = nodes.find((n) => n.type === "main")
+      if (mainNode) {
+        const title = importedFileName
+          ? importedFileName.replace(/\.(md|txt)$/i, "")
+          : mainNode.title
+        updateNode(mainNode.id, { content: importedContent, title })
+      }
+      sessionStorage.removeItem("importedSkillContent")
+      sessionStorage.removeItem("importedSkillFileName")
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleAddReference = useCallback(() => {
     const mainNode = nodes.find((n) => n.type === "main")

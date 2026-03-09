@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, FolderInput } from "lucide-react"
@@ -226,8 +226,29 @@ function SkillCard({ skill }: { skill: Skill }) {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      sessionStorage.setItem("importedSkillContent", content)
+      sessionStorage.setItem("importedSkillFileName", file.name)
+      router.push("/")
+    }
+    reader.readAsText(file)
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = ""
+  }
 
   const filteredSkills = useMemo(() => {
     let skills = SAMPLE_SKILLS
@@ -281,8 +302,8 @@ export default function HomePage() {
                 New Skill
               </span>
             </Link>
-            <Link
-              href="/import"
+            <button
+              onClick={handleImportClick}
               className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             >
               <div
@@ -294,7 +315,14 @@ export default function HomePage() {
               <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
                 Import Skill
               </span>
-            </Link>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.txt"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
         </div>
       </div>
