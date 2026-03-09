@@ -331,7 +331,7 @@ export default function HomePage() {
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Intro */}
         <div className="text-center w-full flex flex-col gap-2 mb-4">
-          <h1 className="text-2xl font-semibold text-white leading-relaxed text-balance">
+          <h1 className="text-4xl font-light text-white leading-relaxed text-balance">
             Explore creating and editing agent skills in a node-based interface that helps you adhere to best practices, then publish them for others to use.
           </h1>
         </div>
