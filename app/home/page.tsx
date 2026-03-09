@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, FolderInput } from "lucide-react"
+import { Search, Plus, Download, Calendar, FileText, Copy, Check, FolderInput } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -140,7 +140,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   const [copied, setCopied] = useState(false)
   
   const skillSlug = skill.name.replace(".md", "")
-  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  const downloadCommand = `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -150,12 +150,16 @@ function SkillCard({ skill }: { skill: Skill }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleView = () => {
+  const handleCardClick = () => {
     router.push(`/editor?skill=${skill.id}`)
   }
 
   return (
-    <Card className="bg-card border-border hover:border-muted-foreground/30 transition-colors duration-200">
+    <Card
+      onClick={handleCardClick}
+      className="bg-card border-border hover:border-muted-foreground/30 hover:bg-[#222222] transition-colors duration-200 flex flex-col h-full cursor-pointer"
+      style={{ transitionTimingFunction: "ease" }}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -171,7 +175,8 @@ function SkillCard({ skill }: { skill: Skill }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200 hover:bg-muted"
+                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-colors duration-200 hover:bg-[#333333]"
+                  style={{ transitionTimingFunction: "ease" }}
                 >
                   <Download size={16} className="text-muted-foreground" />
                 </button>
@@ -193,16 +198,10 @@ function SkillCard({ skill }: { skill: Skill }) {
                 </div>
               </TooltipContent>
             </Tooltip>
-            <button
-              onClick={handleView}
-              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200 hover:bg-muted"
-            >
-              <Eye size={16} className="text-muted-foreground" />
-            </button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col flex-1 justify-end gap-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {truncateDescription(skill.description)}
         </p>
@@ -386,7 +385,7 @@ function SkillGrid({ skills }: { skills: Skill[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
       {skills.map((skill) => (
         <SkillCard key={skill.id} skill={skill} />
       ))}
