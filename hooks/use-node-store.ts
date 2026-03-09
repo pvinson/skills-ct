@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import type { SkillNode, Connection, NodeType } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
-
-let nodeCounter = 0
 
 function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   const config = NODE_CONFIGS[type]
@@ -28,28 +26,42 @@ function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   return `${baseTitle}-${counter}`
 }
 
-function createNode(type: NodeType, x: number, y: number, existingNodes: SkillNode[]): SkillNode {
-  nodeCounter++
-  const config = NODE_CONFIGS[type]
-  return {
-    id: `node-${nodeCounter}`,
-    type,
-    x,
-    y,
-    width: 600,
-    height: 600,
-    title: getUniqueTitle(type, existingNodes),
-    extension: config.defaultExtension,
-    content: config.defaultContent,
-    locked: false,
-  }
+// Create initial node with deterministic ID for SSR consistency
+const initialMainNode: SkillNode = {
+  id: "node-main-initial",
+  type: "main",
+  x: 200,
+  y: 100,
+  width: 600,
+  height: 600,
+  title: NODE_CONFIGS["main"].defaultTitle,
+  extension: NODE_CONFIGS["main"].defaultExtension,
+  content: NODE_CONFIGS["main"].defaultContent,
+  locked: false,
 }
 
 export function useNodeStore() {
-  const [nodes, setNodes] = useState<SkillNode[]>(() => {
-    const mainNode = createNode("main", 200, 100, [])
-    return [mainNode]
-  })
+  // Use a ref for the counter to avoid SSR/client mismatch
+  const nodeCounterRef = useRef(0)
+  
+  const createNode = useCallback((type: NodeType, x: number, y: number, existingNodes: SkillNode[]): SkillNode => {
+    nodeCounterRef.current++
+    const config = NODE_CONFIGS[type]
+    return {
+      id: `node-${nodeCounterRef.current}-${Date.now()}`,
+      type,
+      x,
+      y,
+      width: 600,
+      height: 600,
+      title: getUniqueTitle(type, existingNodes),
+      extension: config.defaultExtension,
+      content: config.defaultContent,
+      locked: false,
+    }
+  }, [])
+
+  const [nodes, setNodes] = useState<SkillNode[]>([initialMainNode])
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
@@ -59,7 +71,7 @@ export function useNodeStore() {
     const node = createNode(type, posX, posY, nodes)
     setNodes((prev) => [...prev, node])
     return node
-  }, [nodes])
+  }, [createNode, nodes])
 
   const updateNode = useCallback((id: string, updates: Partial<SkillNode>) => {
     // If content is being updated, check for removed references
@@ -114,10 +126,10 @@ export function useNodeStore() {
     (id: string) => {
       const source = nodes.find((n) => n.id === id)
       if (!source) return
-      nodeCounter++
+      nodeCounterRef.current++
       const dup: SkillNode = {
         ...source,
-        id: `node-${nodeCounter}`,
+        id: `node-${nodeCounterRef.current}-${Date.now()}`,
         x: source.x + 40,
         y: source.y + 40,
         title: `${source.title}-copy`,
