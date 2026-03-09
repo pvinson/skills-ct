@@ -30,7 +30,7 @@ export default function Home() {
   
   // For demo purposes, using a placeholder skill name
   const skillSlug = "current-skill"
-  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  const downloadCommand = `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
   
   const {
     nodes,
