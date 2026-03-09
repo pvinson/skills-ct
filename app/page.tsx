@@ -3,8 +3,9 @@
 import { useCallback, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
+import { Save, XCircle, AlertTriangle, Download, Copy, Check, Loader2 } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
+import type { SkillNode } from "@/lib/types"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
 import {
@@ -22,15 +23,106 @@ import {
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 
+// Helper to extract skill name from frontmatter
+function extractSkillName(node: SkillNode | undefined): string | null {
+  if (!node?.content) return null
+  const frontmatterMatch = node.content.match(/^---\n([\s\S]*?)\n---/)
+  if (!frontmatterMatch) return null
+  const nameMatch = frontmatterMatch[1].match(/name:\s*(.+)/)
+  return nameMatch ? nameMatch[1].trim() : null
+}
+
+// Helper to extract description from frontmatter  
+function extractDescription(node: SkillNode | undefined): string {
+  if (!node?.content) return ""
+  const frontmatterMatch = node.content.match(/^---\n([\s\S]*?)\n---/)
+  if (!frontmatterMatch) return ""
+  const descMatch = frontmatterMatch[1].match(/description:\s*(.+)/)
+  return descMatch ? descMatch[1].trim() : ""
+}
+
+// Helper to build folder structure from nodes
+function buildSkillFiles(nodes: SkillNode[], skillName: string): Array<{ path: string; content: string; encoding?: "utf-8" | "base64" }> {
+  const files: Array<{ path: string; content: string; encoding?: "utf-8" | "base64" }> = []
+
+  for (const node of nodes) {
+    // Skip readme nodes - they're just guidelines
+    if (node.type === "readme") continue
+
+    switch (node.type) {
+      case "main":
+        files.push({
+          path: "SKILL.md",
+          content: node.content,
+          encoding: "utf-8",
+        })
+        break
+
+      case "reference": {
+        // Sanitize title for filename
+        const refTitle = node.title.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase()
+        files.push({
+          path: `references/REFERENCE-${refTitle}.md`,
+          content: node.content,
+          encoding: "utf-8",
+        })
+        break
+      }
+
+      case "asset": {
+        const assetTitle = node.title.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase()
+        const extension = node.extension || "png"
+        
+        if (node.assetFile?.dataUrl) {
+          // Extract base64 content from data URL
+          const base64Content = node.assetFile.dataUrl.split(",")[1] || ""
+          files.push({
+            path: `assets/${assetTitle}.${extension}`,
+            content: base64Content,
+            encoding: "base64",
+          })
+        } else if (node.content) {
+          // Text-based asset
+          files.push({
+            path: `assets/${assetTitle}.${extension}`,
+            content: node.content,
+            encoding: "utf-8",
+          })
+        }
+        break
+      }
+
+      case "script": {
+        const scriptTitle = node.title.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase()
+        const extension = node.extension || "py"
+        files.push({
+          path: `scripts/${scriptTitle}.${extension}`,
+          content: node.content,
+          encoding: "utf-8",
+        })
+        break
+      }
+    }
+  }
+
+  return files
+}
+
 export default function Home() {
   const router = useRouter()
   const { toast } = useToast()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedSkillUrl, setSavedSkillUrl] = useState<string | null>(null)
   
-  // For demo purposes, using a placeholder skill name
-  const skillSlug = "current-skill"
-  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  // Get skill name from main node for download command
+  const { nodes } = useNodeStore()
+  const mainNode = nodes.find((n) => n.type === "main")
+  const skillSlug = extractSkillName(mainNode) || "current-skill"
+  const downloadCommand = savedSkillUrl 
+    ? `$ npx skills add ${savedSkillUrl}`
+    : `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
   
   const {
     nodes,
@@ -270,25 +362,85 @@ export default function Home() {
     [selectedNodeId, nodes, updateNode]
   )
 
-  const handleSave = useCallback(() => {
-    // Build all files data
-    const files = nodes.map((node) => ({
-      filename: `${node.title}.md`,
-      type: node.type,
-      content: node.content,
-    }))
+  const handleSave = useCallback(async () => {
+    // Find the main node and extract skill name
+    const mainNode = nodes.find((n) => n.type === "main")
+    const skillName = extractSkillName(mainNode)
 
-    // Download as JSON bundle
-    const blob = new Blob([JSON.stringify(files, null, 2)], {
-      type: "application/json",
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "skill-files.json"
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [nodes])
+    if (!skillName) {
+      toast({
+        title: "Error",
+        description: "Please set a skill name in the SKILL.md frontmatter (name: your-skill-name)",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate skill name format
+    const slugRegex = /^[a-z0-9-]+$/
+    if (!slugRegex.test(skillName)) {
+      toast({
+        title: "Invalid skill name",
+        description: "Skill name must be lowercase letters, numbers, and hyphens only (e.g., 'my-skill-name')",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      // Build the folder structure
+      const files = buildSkillFiles(nodes, skillName)
+
+      if (files.length === 0) {
+        toast({
+          title: "No files to save",
+          description: "Please add some content to your skill before saving.",
+          variant: "destructive",
+        })
+        setIsSaving(false)
+        return
+      }
+
+      // Call the save API
+      const response = await fetch("/api/save-skill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skillName, files }),
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save skill")
+      }
+
+      // Update the saved skill URL for the download button
+      setSavedSkillUrl(result.folderUrl)
+
+      // Show success toast with clickable link
+      toast({
+        title: "Skill saved successfully!",
+        description: `This skill has been saved to ${result.folderUrl}`,
+      })
+
+      // Redirect to homepage after a short delay
+      setTimeout(() => {
+        router.push("/home")
+      }, 2000)
+
+    } catch (error) {
+      console.error("Error saving skill:", error)
+      toast({
+        title: "Failed to save skill",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }, [nodes, toast, router])
 
   const handleCancelClick = useCallback(() => {
     setShowCancelDialog(true)
@@ -318,17 +470,18 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            disabled={isSaving}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ width: "fit-content" }}
           >
             <div
               className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
               style={{ background: "rgba(34,197,94,0.19)", color: "#22c55e" }}
             >
-              <Save size={16} />
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             </div>
             <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </span>
           </button>
           <button

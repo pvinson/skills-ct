@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check } from "lucide-react"
+import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, Loader2 } from "lucide-react"
+import useSWR from "swr"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -27,10 +28,14 @@ interface Skill {
   description: string
   createdAt: string
   updatedAt: string
-  fileSize: string
-  downloads: number
-  isGoated: boolean
+  fileSize?: string
+  downloads?: number
+  isGoated?: boolean
+  folderUrl?: string
 }
+
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const SAMPLE_SKILLS: Skill[] = [
   {
@@ -141,8 +146,11 @@ function SkillCard({ skill }: { skill: Skill }) {
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
   
+  // Use folderUrl if available (from GitHub), otherwise fallback to skill name
   const skillSlug = skill.name.replace(".md", "")
-  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  const downloadCommand = skill.folderUrl 
+    ? `$ npx skills add ${skill.folderUrl}`
+    : `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -213,14 +221,18 @@ function SkillCard({ skill }: { skill: Skill }) {
             <Calendar size={12} />
             {formatDate(skill.updatedAt)}
           </span>
-          <span className="flex items-center gap-1">
-            <FileText size={12} />
-            {skill.fileSize}
-          </span>
-          <span className="flex items-center gap-1">
-            <Download size={12} />
-            {skill.downloads.toLocaleString()}
-          </span>
+          {skill.fileSize && (
+            <span className="flex items-center gap-1">
+              <FileText size={12} />
+              {skill.fileSize}
+            </span>
+          )}
+          {skill.downloads !== undefined && (
+            <span className="flex items-center gap-1">
+              <Download size={12} />
+              {skill.downloads.toLocaleString()}
+            </span>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -231,8 +243,25 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
 
+  // Fetch skills from GitHub via API
+  const { data: apiResponse, isLoading, error } = useSWR<{ success: boolean; skills: Skill[] }>(
+    "/api/skills",
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      refreshInterval: 30000, // Refresh every 30 seconds
+    }
+  )
+
+  // Combine GitHub skills with sample skills (sample skills shown as fallback/demo)
+  const allSkills = useMemo(() => {
+    const githubSkills = apiResponse?.skills || []
+    // Merge GitHub skills first, then sample skills as fallback
+    return [...githubSkills, ...SAMPLE_SKILLS]
+  }, [apiResponse])
+
   const filteredSkills = useMemo(() => {
-    let skills = SAMPLE_SKILLS
+    let skills = allSkills
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -256,7 +285,7 @@ export default function HomePage() {
     }
 
     return skills
-  }, [searchQuery, activeTab])
+  }, [searchQuery, activeTab, allSkills])
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -326,10 +355,10 @@ export default function HomePage() {
           </div>
 
           <TabsContent value="all" className="mt-6">
-            <SkillGrid skills={filteredSkills} />
+            <SkillGrid skills={filteredSkills} isLoading={isLoading} />
           </TabsContent>
           <TabsContent value="goated" className="mt-6">
-            <SkillGrid skills={filteredSkills} />
+            <SkillGrid skills={filteredSkills} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
       </div>
@@ -337,7 +366,15 @@ export default function HomePage() {
   )
 }
 
-function SkillGrid({ skills }: { skills: Skill[] }) {
+function SkillGrid({ skills, isLoading }: { skills: Skill[]; isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   if (skills.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
