@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, Upload } from "lucide-react"
+import { Search, Plus, Download, Calendar, FileText, Eye, Copy, Check, FolderInput } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -289,7 +289,7 @@ export default function HomePage() {
                 className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
                 style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
               >
-                <Upload size={16} />
+                <FolderInput size={16} />
               </div>
               <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
                 Import Skill
