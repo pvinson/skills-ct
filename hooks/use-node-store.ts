@@ -26,7 +26,7 @@ function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   return `${baseTitle}-${counter}`
 }
 
-// Create initial node with deterministic ID for SSR consistency
+// Create initial nodes with deterministic IDs for SSR consistency
 const initialMainNode: SkillNode = {
   id: "node-main-initial",
   type: "main",
@@ -37,6 +37,19 @@ const initialMainNode: SkillNode = {
   title: NODE_CONFIGS["main"].defaultTitle,
   extension: NODE_CONFIGS["main"].defaultExtension,
   content: NODE_CONFIGS["main"].defaultContent,
+  locked: false,
+}
+
+const initialReadmeNode: SkillNode = {
+  id: "node-readme-initial",
+  type: "readme",
+  x: 900,
+  y: 100,
+  width: 600,
+  height: 600,
+  title: NODE_CONFIGS["readme"].defaultTitle,
+  extension: NODE_CONFIGS["readme"].defaultExtension,
+  content: NODE_CONFIGS["readme"].defaultContent,
   locked: false,
 }
 
@@ -61,7 +74,7 @@ export function useNodeStore() {
     }
   }, [])
 
-  const [nodes, setNodes] = useState<SkillNode[]>([initialMainNode])
+  const [nodes, setNodes] = useState<SkillNode[]>([initialMainNode, initialReadmeNode])
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
