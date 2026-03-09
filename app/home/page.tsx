@@ -140,7 +140,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   const [copied, setCopied] = useState(false)
   
   const skillSlug = skill.name.replace(".md", "")
-  const downloadCommand = `$ npx skills add https://github.com/vercel-labs/skills --skill ${skillSlug}`
+  const downloadCommand = `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
