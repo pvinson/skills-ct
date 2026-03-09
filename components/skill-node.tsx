@@ -54,8 +54,9 @@ export function SkillNodeComponent({
 
   const config = NODE_CONFIGS[node.type]
   const hasInput = node.type === "main"
-  const hasOutput = node.type !== "main"
+  const hasOutput = node.type !== "main" && node.type !== "readme"
   const isLightBg = node.type === "script"
+  const isReadme = node.type === "readme"
   const textColor = isLightBg ? "#111111" : "rgba(255,255,255,0.9)"
   const textColorMuted = isLightBg ? "rgba(17,17,17,0.5)" : "rgba(255,255,255,0.5)"
   const borderColor = isLightBg ? "rgba(17,17,17,0.2)" : "rgba(255,255,255,0.15)"
@@ -515,15 +516,17 @@ export function SkillNodeComponent({
                 </div>
               )
             })()}
-            <span
-              className="text-[10px] font-mono px-2 py-0.5 rounded-full"
-              style={{
-                background: isLightBg ? "rgba(17,17,17,0.1)" : "rgba(255,255,255,0.12)",
-                color: isLightBg ? "rgba(17,17,17,0.7)" : "rgba(255,255,255,0.7)",
-              }}
-            >
-              {config.badge}
-            </span>
+            {!isReadme && (
+              <span
+                className="text-[10px] font-mono px-2 py-0.5 rounded-full"
+                style={{
+                  background: isLightBg ? "rgba(17,17,17,0.1)" : "rgba(255,255,255,0.12)",
+                  color: isLightBg ? "rgba(17,17,17,0.7)" : "rgba(255,255,255,0.7)",
+                }}
+              >
+                {config.badge}
+              </span>
+            )}
             {node.type === "main" && (
               <div className="no-drag relative" ref={menuRef}>
                 <button
@@ -572,7 +575,7 @@ export function SkillNodeComponent({
                 )}
               </div>
             )}
-            {node.type !== "main" && (
+            {node.type !== "main" && !isReadme && (
               <div className="no-drag relative" ref={menuRef}>
                 <button
                   className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-white/10"
