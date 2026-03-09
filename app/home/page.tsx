@@ -151,7 +151,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   const handleView = () => {
-    router.push(`/?skill=${skill.id}`)
+    router.push(`/editor?skill=${skill.id}`)
   }
 
   return (
@@ -243,7 +243,7 @@ export default function HomePage() {
       const content = event.target?.result as string
       sessionStorage.setItem("importedSkillContent", content)
       sessionStorage.setItem("importedSkillFileName", file.name)
-      router.push("/")
+      router.push("/editor")
     }
     reader.readAsText(file)
     // Reset input so the same file can be re-selected if needed
@@ -282,14 +282,14 @@ export default function HomePage() {
       {/* Header */}
       <div className="w-full px-4 py-4">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/home">
             <h1 className="text-xl font-semibold text-foreground tracking-tight font-sans hover:text-muted-foreground transition-colors">
               skills.ct
             </h1>
           </Link>
           <div className="flex items-center gap-1">
             <Link
-              href="/"
+              href="/editor"
               className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             >
               <div
