@@ -175,7 +175,8 @@ function SkillCard({ skill }: { skill: Skill }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200 hover:bg-muted"
+                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-colors duration-200 hover:bg-[#333333]"
+                  style={{ transitionTimingFunction: "ease" }}
                 >
                   <Download size={16} className="text-muted-foreground" />
                 </button>
