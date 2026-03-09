@@ -332,7 +332,7 @@ export default function HomePage() {
         {/* Intro */}
         <div className="text-center w-full flex flex-col gap-2 mb-4">
           <h1 className="text-2xl font-light text-muted-foreground leading-relaxed text-balance font-mono">
-            Explore creating and editing agent skills in a node-based interface that helps you adhere to best practices, then publish them for others to use.
+            Create and share agent skills in a node-based interface that helps you adhere to best practices.
           </h1>
         </div>
 
