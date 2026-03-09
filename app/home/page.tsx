@@ -288,7 +288,7 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Intro */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-2 gap-6 max-w-3xl mx-auto">
           <p className="text-base font-semibold text-white leading-relaxed">
             Agents load specific skills &ldquo;just in time&rdquo; when a task is detected, rather than keeping all instructions in active memory.
           </p>
