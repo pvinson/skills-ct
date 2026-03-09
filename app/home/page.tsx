@@ -155,7 +155,7 @@ function SkillCard({ skill }: { skill: Skill }) {
   }
 
   return (
-    <Card className="bg-card border-border hover:border-muted-foreground/30 transition-colors duration-200">
+    <Card className="bg-card border-border hover:border-muted-foreground/30 transition-colors duration-200 flex flex-col h-full">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -202,7 +202,7 @@ function SkillCard({ skill }: { skill: Skill }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col flex-1 justify-end gap-3">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {truncateDescription(skill.description)}
         </p>
@@ -386,7 +386,7 @@ function SkillGrid({ skills }: { skills: Skill[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
       {skills.map((skill) => (
         <SkillCard key={skill.id} skill={skill} />
       ))}
