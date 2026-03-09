@@ -837,10 +837,10 @@ export function SkillNodeComponent({
                   }}
                   value={node.content}
                   onChange={(e) => {
-                    if (!node.locked) onUpdate(node.id, { content: e.target.value })
+                    if (!node.locked && !isReadme) onUpdate(node.id, { content: e.target.value })
                   }}
                   onScroll={handleTextareaScroll}
-                  readOnly={node.locked}
+                  readOnly={node.locked || isReadme}
                   onClick={(e) => {
                     e.stopPropagation()
                     onSelect(node.id)
