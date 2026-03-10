@@ -1,9 +1,17 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import type { SkillNode, Connection, NodeType } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
 import type { SkillContent } from "@/lib/supabase/types"
+
+// Module-level flag to track if import has been applied (persists across remounts in Strict Mode)
+let hasAppliedImport = false
+
+// Reset import flag - call this when navigating away from editor
+export function resetImportFlag() {
+  hasAppliedImport = false
+}
 
 function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   const config = NODE_CONFIGS[type]
@@ -27,23 +35,8 @@ function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   return `${baseTitle}-${counter}`
 }
 
-// Create initial nodes - checks sessionStorage for imported content on client
-function getInitialNodes(): SkillNode[] {
-  // Check if we're on the client and have imported content
-  let importedContent: string | null = null
-  let importedFileName: string | null = null
-  
-  if (typeof window !== "undefined") {
-    importedContent = sessionStorage.getItem("importedSkillContent")
-    importedFileName = sessionStorage.getItem("importedSkillFileName")
-    
-    // Clear sessionStorage immediately after reading
-    if (importedContent) {
-      sessionStorage.removeItem("importedSkillContent")
-      sessionStorage.removeItem("importedSkillFileName")
-    }
-  }
-  
+// Create default initial nodes (without sessionStorage check - that happens in useEffect)
+function getDefaultInitialNodes(): SkillNode[] {
   const mainNode: SkillNode = {
     id: "node-main-initial",
     type: "main",
@@ -51,11 +44,9 @@ function getInitialNodes(): SkillNode[] {
     y: 100,
     width: 600,
     height: 600,
-    title: importedFileName 
-      ? importedFileName.replace(/\.(md|txt)$/i, "") 
-      : NODE_CONFIGS["main"].defaultTitle,
+    title: NODE_CONFIGS["main"].defaultTitle,
     extension: NODE_CONFIGS["main"].defaultExtension,
-    content: importedContent || NODE_CONFIGS["main"].defaultContent,
+    content: NODE_CONFIGS["main"].defaultContent,
     locked: false,
   }
 
@@ -96,9 +87,38 @@ export function useNodeStore() {
     }
   }, [])
 
-  const [nodes, setNodes] = useState<SkillNode[]>(getInitialNodes)
+  const [nodes, setNodes] = useState<SkillNode[]>(getDefaultInitialNodes)
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+
+  // Check for imported content after hydration (runs once on client mount)
+  useEffect(() => {
+    // Only run once - module-level flag persists across Strict Mode remounts
+    if (hasAppliedImport) return
+    
+    const importedContent = sessionStorage.getItem("importedSkillContent")
+    const importedFileName = sessionStorage.getItem("importedSkillFileName")
+    
+    if (importedContent) {
+      // Mark as applied BEFORE clearing storage (persists across remounts)
+      hasAppliedImport = true
+      
+      // Clear sessionStorage
+      sessionStorage.removeItem("importedSkillContent")
+      sessionStorage.removeItem("importedSkillFileName")
+      
+      // Update the main node with imported content
+      const title = importedFileName 
+        ? importedFileName.replace(/\.(md|txt)$/i, "") 
+        : NODE_CONFIGS["main"].defaultTitle
+      
+      setNodes(prev => prev.map(node => 
+        node.type === "main" 
+          ? { ...node, content: importedContent, title }
+          : node
+      ))
+    }
+  }, [])
 
   const addNode = useCallback((type: NodeType, x?: number, y?: number): SkillNode => {
     const posX = x ?? 250 + Math.random() * 200

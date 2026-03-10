@@ -3,7 +3,7 @@
 import { useCallback, useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Save, XCircle, AlertTriangle, Download, Copy, Check, Upload, Loader2 } from "lucide-react"
-import { useNodeStore } from "@/hooks/use-node-store"
+import { useNodeStore, resetImportFlag } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
 import {
@@ -425,9 +425,10 @@ function EditorContent() {
     setShowCancelDialog(true)
   }, [])
 
-  const handleConfirmCancel = useCallback(() => {
-    setShowCancelDialog(false)
-    router.push("/home")
+const handleConfirmCancel = useCallback(() => {
+  setShowCancelDialog(false)
+  resetImportFlag() // Reset flag so next import works
+  router.push("/home")
   }, [router])
 
   const handleCopyDownloadLink = useCallback(async () => {
