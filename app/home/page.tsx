@@ -287,20 +287,6 @@ export default function HomePage() {
             </h1>
           </Link>
           <div className="flex items-center gap-1">
-            <Link
-              href="/editor"
-              className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
-            >
-              <div
-                className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
-                style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
-              >
-                <Plus size={16} />
-              </div>
-              <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
-                New Skill
-              </span>
-            </Link>
             <button
               onClick={handleImportClick}
               className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
@@ -322,6 +308,20 @@ export default function HomePage() {
               className="hidden"
               onChange={handleFileChange}
             />
+            <Link
+              href="/editor"
+              className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            >
+              <div
+                className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+              >
+                <Plus size={16} />
+              </div>
+              <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-40 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
+                Create New Skill
+              </span>
+            </Link>
           </div>
         </div>
       </div>
