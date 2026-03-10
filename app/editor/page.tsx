@@ -27,26 +27,6 @@ export default function EditorPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click()
-  }, [])
-
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const content = event.target?.result as string
-      const mainNode = nodes.find((n) => n.type === "main")
-      if (mainNode) {
-        const title = file.name.replace(/\.(md|txt)$/i, "")
-        updateNode(mainNode.id, { content, title })
-      }
-    }
-    reader.readAsText(file)
-    e.target.value = ""
-  }, [nodes, updateNode])
   
   // For demo purposes, using a placeholder skill name
   const skillSlug = "current-skill"
@@ -82,6 +62,26 @@ export default function EditorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const handleImportClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      const mainNode = nodes.find((n) => n.type === "main")
+      if (mainNode) {
+        const title = file.name.replace(/\.(md|txt)$/i, "")
+        updateNode(mainNode.id, { content, title })
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ""
+  }, [nodes, updateNode])
 
   const handleAddReference = useCallback(() => {
     const mainNode = nodes.find((n) => n.type === "main")
