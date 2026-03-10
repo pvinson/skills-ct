@@ -27,31 +27,52 @@ function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   return `${baseTitle}-${counter}`
 }
 
-// Create initial nodes with deterministic IDs for SSR consistency
-const initialMainNode: SkillNode = {
-  id: "node-main-initial",
-  type: "main",
-  x: 200,
-  y: 100,
-  width: 600,
-  height: 600,
-  title: NODE_CONFIGS["main"].defaultTitle,
-  extension: NODE_CONFIGS["main"].defaultExtension,
-  content: NODE_CONFIGS["main"].defaultContent,
-  locked: false,
-}
+// Create initial nodes - checks sessionStorage for imported content on client
+function getInitialNodes(): SkillNode[] {
+  // Check if we're on the client and have imported content
+  let importedContent: string | null = null
+  let importedFileName: string | null = null
+  
+  if (typeof window !== "undefined") {
+    importedContent = sessionStorage.getItem("importedSkillContent")
+    importedFileName = sessionStorage.getItem("importedSkillFileName")
+    
+    // Clear sessionStorage immediately after reading
+    if (importedContent) {
+      sessionStorage.removeItem("importedSkillContent")
+      sessionStorage.removeItem("importedSkillFileName")
+    }
+  }
+  
+  const mainNode: SkillNode = {
+    id: "node-main-initial",
+    type: "main",
+    x: 200,
+    y: 100,
+    width: 600,
+    height: 600,
+    title: importedFileName 
+      ? importedFileName.replace(/\.(md|txt)$/i, "") 
+      : NODE_CONFIGS["main"].defaultTitle,
+    extension: NODE_CONFIGS["main"].defaultExtension,
+    content: importedContent || NODE_CONFIGS["main"].defaultContent,
+    locked: false,
+  }
 
-const initialReadmeNode: SkillNode = {
-  id: "node-readme-initial",
-  type: "readme",
-  x: 900,
-  y: 100,
-  width: 600,
-  height: 600,
-  title: NODE_CONFIGS["readme"].defaultTitle,
-  extension: NODE_CONFIGS["readme"].defaultExtension,
-  content: NODE_CONFIGS["readme"].defaultContent,
-  locked: false,
+  const readmeNode: SkillNode = {
+    id: "node-readme-initial",
+    type: "readme",
+    x: 900,
+    y: 100,
+    width: 600,
+    height: 600,
+    title: NODE_CONFIGS["readme"].defaultTitle,
+    extension: NODE_CONFIGS["readme"].defaultExtension,
+    content: NODE_CONFIGS["readme"].defaultContent,
+    locked: false,
+  }
+  
+  return [mainNode, readmeNode]
 }
 
 export function useNodeStore() {
@@ -75,7 +96,7 @@ export function useNodeStore() {
     }
   }, [])
 
-  const [nodes, setNodes] = useState<SkillNode[]>([initialMainNode, initialReadmeNode])
+  const [nodes, setNodes] = useState<SkillNode[]>(getInitialNodes)
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
