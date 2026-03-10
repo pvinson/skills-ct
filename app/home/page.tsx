@@ -19,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { resetImportFlag } from "@/hooks/use-node-store"
 import type { Skill } from "@/lib/supabase/types"
 
 function truncateDescription(description: string, maxLength: number = 120): string {
@@ -175,8 +174,6 @@ export default function HomePage() {
     const reader = new FileReader()
     reader.onload = (event) => {
       const content = event.target?.result as string
-      // Reset the import flag before setting new content
-      resetImportFlag()
       sessionStorage.setItem("importedSkillContent", content)
       sessionStorage.setItem("importedSkillFileName", file.name)
       router.push("/editor")
