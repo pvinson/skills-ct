@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useState, useEffect } from "react"
+import { useCallback, useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
+import { Upload, XCircle, AlertTriangle, Download, Copy, Check, FolderInput } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
@@ -26,6 +26,7 @@ export default function EditorPage() {
   const { toast } = useToast()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [copied, setCopied] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // For demo purposes, using a placeholder skill name
   const skillSlug = "current-skill"
@@ -61,6 +62,26 @@ export default function EditorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const handleImportClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      const mainNode = nodes.find((n) => n.type === "main")
+      if (mainNode) {
+        const title = file.name.replace(/\.(md|txt)$/i, "")
+        updateNode(mainNode.id, { content, title })
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ""
+  }, [nodes, updateNode])
 
   const handleAddReference = useCallback(() => {
     const mainNode = nodes.find((n) => n.type === "main")
@@ -338,6 +359,28 @@ export default function EditorPage() {
         </button>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleImportClick}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            style={{ width: "fit-content" }}
+          >
+            <div
+              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
+            >
+              <FolderInput size={16} />
+            </div>
+            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
+              Import Skill
+            </span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.txt"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button
             onClick={handleSave}
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             style={{ width: "fit-content" }}
@@ -346,10 +389,10 @@ export default function EditorPage() {
               className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
               style={{ background: "rgba(34,197,94,0.19)", color: "#22c55e" }}
             >
-              <Save size={16} />
+              <Upload size={16} />
             </div>
             <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
-              Save
+              Publish
             </span>
           </button>
           <button
