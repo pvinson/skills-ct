@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react"
 import type { SkillNode, Connection, NodeType } from "@/lib/types"
 import { NODE_CONFIGS } from "@/lib/types"
+import type { SkillContent } from "@/lib/supabase/types"
 
 function getUniqueTitle(type: NodeType, existingNodes: SkillNode[]): string {
   const config = NODE_CONFIGS[type]
@@ -213,6 +214,15 @@ export function useNodeStore() {
     setConnections((prev) => prev.filter((c) => c.id !== id))
   }, [])
 
+  const loadSkillContent = useCallback((content: SkillContent) => {
+    if (content.nodes && content.nodes.length > 0) {
+      setNodes(content.nodes)
+    }
+    if (content.connections) {
+      setConnections(content.connections)
+    }
+  }, [])
+
   return {
     nodes,
     connections,
@@ -224,5 +234,6 @@ export function useNodeStore() {
     removeNode,
     addConnection,
     removeConnection,
+    loadSkillContent,
   }
 }

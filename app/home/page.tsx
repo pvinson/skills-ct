@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Download, Calendar, FileText, Copy, Check, FolderInput } from "lucide-react"
+import { Search, Plus, Download, Calendar, FileText, Copy, Check, FolderInput, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -19,109 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-
-interface Skill {
-  id: string
-  title: string
-  name: string
-  description: string
-  createdAt: string
-  updatedAt: string
-  fileSize: string
-  downloads: number
-  isGoated: boolean
-}
-
-const SAMPLE_SKILLS: Skill[] = [
-  {
-    id: "1",
-    title: "UX Best Practices",
-    name: "ux-best-practices.md",
-    description: "Comprehensive guide to user experience design principles, accessibility standards, and usability testing methodologies.",
-    createdAt: "2025-11-15",
-    updatedAt: "2026-02-28",
-    fileSize: "24 KB",
-    downloads: 1247,
-    isGoated: true,
-  },
-  {
-    id: "2",
-    title: "React Component Patterns",
-    name: "react-component-patterns.md",
-    description: "Modern React patterns including hooks, compound components, render props, and state management best practices.",
-    createdAt: "2025-12-01",
-    updatedAt: "2026-03-01",
-    fileSize: "32 KB",
-    downloads: 2156,
-    isGoated: true,
-  },
-  {
-    id: "3",
-    title: "API Design Guidelines",
-    name: "api-design-guidelines.md",
-    description: "RESTful API design principles, versioning strategies, error handling patterns, and documentation standards.",
-    createdAt: "2026-01-10",
-    updatedAt: "2026-02-20",
-    fileSize: "18 KB",
-    downloads: 893,
-    isGoated: false,
-  },
-  {
-    id: "4",
-    title: "TypeScript Advanced Types",
-    name: "typescript-advanced-types.md",
-    description: "Deep dive into TypeScript generics, conditional types, mapped types, and template literal types.",
-    createdAt: "2026-02-01",
-    updatedAt: "2026-03-05",
-    fileSize: "28 KB",
-    downloads: 1834,
-    isGoated: true,
-  },
-  {
-    id: "5",
-    title: "Git Workflow Standards",
-    name: "git-workflow-standards.md",
-    description: "Branch naming conventions, commit message formats, PR templates, and code review guidelines for teams.",
-    createdAt: "2026-01-20",
-    updatedAt: "2026-02-15",
-    fileSize: "15 KB",
-    downloads: 567,
-    isGoated: false,
-  },
-  {
-    id: "6",
-    title: "CSS Architecture",
-    name: "css-architecture.md",
-    description: "Scalable CSS methodologies including BEM, CSS-in-JS patterns, design tokens, and responsive design systems.",
-    createdAt: "2026-02-10",
-    updatedAt: "2026-03-02",
-    fileSize: "21 KB",
-    downloads: 1102,
-    isGoated: false,
-  },
-  {
-    id: "7",
-    title: "Testing Strategies",
-    name: "testing-strategies.md",
-    description: "Unit testing, integration testing, E2E testing approaches with Jest, Testing Library, and Playwright.",
-    createdAt: "2026-02-25",
-    updatedAt: "2026-03-04",
-    fileSize: "26 KB",
-    downloads: 789,
-    isGoated: false,
-  },
-  {
-    id: "8",
-    title: "Performance Optimization",
-    name: "performance-optimization.md",
-    description: "Web performance metrics, lazy loading, code splitting, caching strategies, and Core Web Vitals optimization.",
-    createdAt: "2026-03-01",
-    updatedAt: "2026-03-06",
-    fileSize: "30 KB",
-    downloads: 456,
-    isGoated: false,
-  },
-]
+import type { Skill } from "@/lib/supabase/types"
 
 function truncateDescription(description: string, maxLength: number = 120): string {
   if (description.length <= maxLength) return description
@@ -147,6 +45,14 @@ function SkillCard({ skill }: { skill: Skill }) {
     await navigator.clipboard.writeText(downloadCommand)
     setCopied(true)
     toast({ description: "Link copied to clipboard" })
+    
+    // Track download
+    try {
+      await fetch(`/api/skills/${skill.id}/download`, { method: "POST" })
+    } catch {
+      // Ignore download tracking errors
+    }
+    
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -228,7 +134,35 @@ export default function HomePage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch skills from the database
+  useEffect(() => {
+    async function fetchSkills() {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch("/api/skills")
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch skills")
+        }
+        
+        const data = await response.json()
+        setSkills(data)
+      } catch (err) {
+        console.error("Error fetching skills:", err)
+        setError("Failed to load skills. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchSkills()
+  }, [])
 
   const handleImportClick = () => {
     fileInputRef.current?.click()
@@ -250,12 +184,12 @@ export default function HomePage() {
   }
 
   const filteredSkills = useMemo(() => {
-    let skills = SAMPLE_SKILLS
+    let filtered = skills
 
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      skills = skills.filter(
+      filtered = filtered.filter(
         (skill) =>
           skill.title.toLowerCase().includes(query) ||
           skill.name.toLowerCase().includes(query) ||
@@ -266,15 +200,15 @@ export default function HomePage() {
     // Filter by tab
     switch (activeTab) {
       case "goated":
-        skills = skills.filter((skill) => skill.isGoated)
+        filtered = filtered.filter((skill) => skill.isGoated)
         break
       default:
         // "all" - no additional filtering
         break
     }
 
-    return skills
-  }, [searchQuery, activeTab])
+    return filtered
+  }, [skills, searchQuery, activeTab])
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -364,10 +298,10 @@ export default function HomePage() {
           </div>
 
           <TabsContent value="all" className="mt-6">
-            <SkillGrid skills={filteredSkills} />
+            <SkillGrid skills={filteredSkills} loading={loading} error={error} />
           </TabsContent>
           <TabsContent value="goated" className="mt-6">
-            <SkillGrid skills={filteredSkills} />
+            <SkillGrid skills={filteredSkills} loading={loading} error={error} />
           </TabsContent>
         </Tabs>
       </div>
@@ -375,11 +309,27 @@ export default function HomePage() {
   )
 }
 
-function SkillGrid({ skills }: { skills: Skill[] }) {
+function SkillGrid({ skills, loading, error }: { skills: Skill[]; loading: boolean; error: string | null }) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-destructive">
+        {error}
+      </div>
+    )
+  }
+
   if (skills.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No skills found matching your search.
+        No skills found. Create your first skill to get started!
       </div>
     )
   }

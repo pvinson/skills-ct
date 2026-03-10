@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
+import { useCallback, useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Save, XCircle, AlertTriangle, Download, Copy, Check, Upload, Loader2 } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
@@ -20,16 +20,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
+import type { Skill, SkillContent } from "@/lib/supabase/types"
 
-export default function EditorPage() {
+function EditorContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [currentSkillId, setCurrentSkillId] = useState<string | null>(null)
   
-  // For demo purposes, using a placeholder skill name
-  const skillSlug = "current-skill"
-  const downloadCommand = `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
+  const skillId = searchParams.get("skill")
   
   const {
     nodes,
@@ -42,7 +45,50 @@ export default function EditorPage() {
     duplicateNode,
     addConnection,
     removeConnection,
+    loadSkillContent,
   } = useNodeStore()
+
+  // Get the main node for naming
+  const mainNode = nodes.find((node) => node.type === "main")
+  const skillSlug = mainNode?.title || "current-skill"
+  const downloadCommand = `$ npx skills add https://github.com/pvinson/skills-ct-storage --skill ${skillSlug}`
+
+  // Load skill from database if skill ID is provided
+  useEffect(() => {
+    async function loadSkill() {
+      if (!skillId) return
+      
+      setLoading(true)
+      try {
+        const response = await fetch(`/api/skills/${skillId}`)
+        if (response.ok) {
+          const skill: Skill = await response.json()
+          setCurrentSkillId(skill.id)
+          
+          // Load skill content into the node store
+          if (skill.content && skill.content.nodes && skill.content.nodes.length > 0) {
+            loadSkillContent(skill.content)
+          }
+        } else {
+          toast({ 
+            description: "Failed to load skill", 
+            variant: "destructive" 
+          })
+        }
+      } catch (error) {
+        console.error("Error loading skill:", error)
+        toast({ 
+          description: "Failed to load skill", 
+          variant: "destructive" 
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadSkill()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skillId])
 
   // Apply imported skill content to the main node on first load
   useEffect(() => {
@@ -143,7 +189,6 @@ export default function EditorPage() {
       const hasSelection = start !== end
       const selectedText = activeTextarea.value.substring(start, end)
       let replacement = ""
-      let cursorOffset = 0
       let newCursorStart = start
       let newCursorEnd = start
 
@@ -287,7 +332,88 @@ export default function EditorPage() {
     [selectedNodeId, nodes, updateNode]
   )
 
-  const handleSave = useCallback(() => {
+  // Calculate file size based on content
+  const calculateFileSize = useCallback(() => {
+    const totalBytes = nodes.reduce((acc, node) => {
+      return acc + new Blob([node.content]).size
+    }, 0)
+    
+    if (totalBytes < 1024) return `${totalBytes} B`
+    if (totalBytes < 1024 * 1024) return `${Math.round(totalBytes / 1024)} KB`
+    return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
+  }, [nodes])
+
+  // Extract description from main node YAML frontmatter
+  const extractDescription = useCallback(() => {
+    const mainNode = nodes.find((n) => n.type === "main")
+    if (!mainNode) return ""
+    
+    const content = mainNode.content
+    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/)
+    if (!frontmatterMatch) return ""
+    
+    const frontmatter = frontmatterMatch[1]
+    const descMatch = frontmatter.match(/description:\s*(.+)/)
+    return descMatch ? descMatch[1].trim() : ""
+  }, [nodes])
+
+  const handleSaveToDatabase = useCallback(async () => {
+    setSaving(true)
+    
+    try {
+      const mainNode = nodes.find((n) => n.type === "main")
+      const skillContent: SkillContent = { nodes, connections }
+      
+      const skillData = {
+        title: mainNode?.title || "Untitled Skill",
+        name: `${mainNode?.title || "skill"}.md`,
+        description: extractDescription(),
+        content: skillContent,
+        fileSize: calculateFileSize(),
+      }
+      
+      let response: Response
+      
+      if (currentSkillId) {
+        // Update existing skill
+        response = await fetch(`/api/skills/${currentSkillId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(skillData),
+        })
+      } else {
+        // Create new skill
+        response = await fetch("/api/skills", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(skillData),
+        })
+      }
+      
+      if (response.ok) {
+        const savedSkill = await response.json()
+        setCurrentSkillId(savedSkill.id)
+        toast({ description: "Skill saved successfully!" })
+        
+        // Update URL with skill ID for new skills
+        if (!currentSkillId) {
+          router.replace(`/editor?skill=${savedSkill.id}`)
+        }
+      } else {
+        throw new Error("Failed to save skill")
+      }
+    } catch (error) {
+      console.error("Error saving skill:", error)
+      toast({ 
+        description: "Failed to save skill", 
+        variant: "destructive" 
+      })
+    } finally {
+      setSaving(false)
+    }
+  }, [nodes, connections, currentSkillId, calculateFileSize, extractDescription, toast, router])
+
+  const handleDownloadLocal = useCallback(() => {
     // Build all files data
     const files = nodes.map((node) => ({
       filename: `${node.title}.md`,
@@ -327,6 +453,14 @@ export default function EditorPage() {
     setTimeout(() => setCopied(false), 2000)
   }, [downloadCommand, toast])
 
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <Loader2 size={32} className="animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-background relative">
       {/* Header */}
@@ -338,18 +472,34 @@ export default function EditorPage() {
         </button>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleSave}
-            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            onClick={handleSaveToDatabase}
+            disabled={saving}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2 disabled:opacity-50"
             style={{ width: "fit-content" }}
           >
             <div
               className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
               style={{ background: "rgba(34,197,94,0.19)", color: "#22c55e" }}
             >
-              <Save size={16} />
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             </div>
             <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
-              Save
+              {currentSkillId ? "Update" : "Publish"}
+            </span>
+          </button>
+          <button
+            onClick={handleDownloadLocal}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            style={{ width: "fit-content" }}
+          >
+            <div
+              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
+            >
+              <Save size={16} />
+            </div>
+            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
+              Export
             </span>
           </button>
           <button
@@ -367,41 +517,43 @@ export default function EditorPage() {
               Cancel
             </span>
           </button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleCopyDownloadLink}
-                className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
-                style={{ width: "fit-content" }}
-              >
-                <div
-                  className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
-                  style={{ background: "rgba(59,130,246,0.19)", color: "#3b82f6" }}
-                >
-                  <Download size={16} />
-                </div>
-                <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#3b82f6" }}>
-                  Download
-                </span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="bottom" 
-              className="bg-[#1a1a1a] border border-[#333] p-0 max-w-none"
-            >
-              <div className="flex items-center gap-3 px-4 py-3">
-                <code className="text-sm font-mono text-[#9ca3af]">
-                  {downloadCommand}
-                </code>
+          {currentSkillId && (
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <button
                   onClick={handleCopyDownloadLink}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+                  style={{ width: "fit-content" }}
                 >
-                  {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                  <div
+                    className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+                    style={{ background: "rgba(168,85,247,0.19)", color: "#a855f7" }}
+                  >
+                    <Download size={16} />
+                  </div>
+                  <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#a855f7" }}>
+                    Share
+                  </span>
                 </button>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="bottom" 
+                className="bg-[#1a1a1a] border border-[#333] p-0 max-w-none"
+              >
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <code className="text-sm font-mono text-[#9ca3af]">
+                    {downloadCommand}
+                  </code>
+                  <button
+                    onClick={handleCopyDownloadLink}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
 
@@ -466,5 +618,17 @@ export default function EditorPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <Loader2 size={32} className="animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <EditorContent />
+    </Suspense>
   )
 }
