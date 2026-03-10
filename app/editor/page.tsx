@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
+import { Save, XCircle, AlertTriangle, Download, Copy, Check } from "lucide-react"
 import { useNodeStore } from "@/hooks/use-node-store"
 import { NodeCanvas } from "@/components/node-canvas"
 import { FloatingToolbar } from "@/components/floating-toolbar"
@@ -346,10 +346,10 @@ export default function EditorPage() {
               className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
               style={{ background: "rgba(34,197,94,0.19)", color: "#22c55e" }}
             >
-              <Upload size={16} />
+              <Save size={16} />
             </div>
             <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-32 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
-              Publish
+              Save
             </span>
           </button>
           <button
