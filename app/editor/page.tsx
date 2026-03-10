@@ -359,6 +359,28 @@ export default function EditorPage() {
         </button>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleImportClick}
+            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
+            style={{ width: "fit-content" }}
+          >
+            <div
+              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
+              style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
+            >
+              <FolderInput size={16} />
+            </div>
+            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
+              Import Skill
+            </span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.txt"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button
             onClick={handleSave}
             className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
             style={{ width: "fit-content" }}
@@ -423,28 +445,6 @@ export default function EditorPage() {
               </div>
             </TooltipContent>
           </Tooltip>
-          <button
-            onClick={handleImportClick}
-            className="group flex items-center gap-0 h-8 rounded-lg transition-all duration-200 hover:gap-2"
-            style={{ width: "fit-content" }}
-          >
-            <div
-              className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200"
-              style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
-            >
-              <FolderInput size={16} />
-            </div>
-            <span className="text-xs font-mono whitespace-nowrap overflow-hidden transition-all duration-200 max-w-0 opacity-0 group-hover:max-w-36 group-hover:opacity-100 group-hover:pr-3" style={{ color: "#22c55e" }}>
-              Import Skill
-            </span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".md,.txt"
-            className="hidden"
-            onChange={handleFileChange}
-          />
         </div>
       </div>
 
